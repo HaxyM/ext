@@ -144,7 +144,7 @@ requires(superblock <System, Config> :: has_free_inodes_count())
 {
  if constexpr (System.file_system == system_config :: file_system_t :: ext)
  {
-  return compose<0x01Bzu, 0x01Azu, 0x019zu, 0x018zu>(std :: forward<Self>(self).block);
+  return compose<0x017zu, 0x016zu, 0x015zu, 0x014zu>(std :: forward<Self>(self).block);
  }
  else
  {
