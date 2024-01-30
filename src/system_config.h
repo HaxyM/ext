@@ -8,6 +8,7 @@ struct system_config
  file_system_t file_system;
  creator_os_t creator_os;
  revision_t revision;
+ bool feature_compat_64bit;
  constexpr static system_config getDefault() noexcept;
 };
 
@@ -38,9 +39,10 @@ constexpr inline system_config system_config :: getDefault() noexcept
 {
  return
  {
-  .file_system = file_system_t :: ext2,
+  .file_system = file_system_t :: ext,
   .creator_os = creator_os_t :: linux,
-  .revision = revision_t :: good_old_rev
+  .revision = revision_t :: good_old_rev,
+  .feature_compat_64bit = false
  };
 }
 
