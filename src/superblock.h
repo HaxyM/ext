@@ -13,6 +13,7 @@
 template <system_config System, global_config Config> class superblock
 {
  constexpr static bool has_inodes_count() noexcept;
+ constexpr static bool has_free_blocks_count() noexcept;
  constexpr static bool has_magic() noexcept;
  constexpr static bool has_creator_os() noexcept;
  constexpr static bool has_rev_level() noexcept;
@@ -21,6 +22,7 @@ template <system_config System, global_config Config> class superblock
  enum class magic_t;
  //Field getters
  template <class Self> auto get_inodes_count(this Self&& self) noexcept requires(has_inodes_count());
+ template <class Self> auto get_free_blocks_count(this Self&& self) noexcept requires(has_free_blocks_count);
  template <class Self> auto get_magic(this Self&& self) noexcept requires(has_magic());
  template <class Self> auto get_creator_os(this Self&& self) noexcept requires(has_creator_os());
  template <class Self> auto get_rev_level(this Self&& self) noexcept requires(has_rev_level());
@@ -29,12 +31,11 @@ template <system_config System, global_config Config> class superblock
  constexpr static std :: size_t get_block_size() noexcept;
  template <class Self> auto&& get_block(this Self&& self) noexcept;
  private:
- constexpr const static std :: size_t total_size = 1024zu;
  std :: shared_ptr<content<get_block_size(), Config> > block;
 };
 
 template <system_config System, global_config Config>
-superblock <System, Config> :: magic_t
+enum class superblock <System, Config> :: magic_t
 {
  old_ext1,
  ext2_and_later
@@ -42,6 +43,12 @@ superblock <System, Config> :: magic_t
 
 template <system_config System, global_config Config>
 constexpr inline bool superblock <System, Config> :: has_inodes_count() noexcept
+{
+ return true;
+}
+
+template <system_config System, global_config Config>
+constexpr inline bool superblock <System, Config> :: has_free_blocks_count() noexcept
 {
  return true;
 }
@@ -102,6 +109,25 @@ inline auto superblock <System, Config> :: get_inodes_count(this Self&& self) no
 requires(superblock <System, Config> :: has_inodes_count())
 {
  return compose<0x003zu, 0x002zu, 0x001zu, 0x000zu>(std :: forward<Self>(self).block);
+}
+
+template <system_config System, global_config Config> template <class Self>
+inline auto superblock <System, Config> :: get_free_blocks_count(this Self&& self) noexcept
+requires(superblock <System, Config> :: has_free_blocks_count())
+{
+ using enum system_config :: file_system_t;
+ if constexpr ((System.file_system == ext4) && System.feature_compat_64bit)
+ {
+  return compose<0x15Bzu, 0x15Azu, 0x159zu, 0x158zu, 0x00Fzu, 0x00Ezu, 0x00Dzu, 0x00Czu>(std :: forward<Self>(self).block);
+ }
+ else if constexpr (System.file_system == ext)
+ { //Ext1 has same location as other exts.
+  return compose<0x00Fzu, 0x00Ezu, 0x00Dzu, 0x00Czu>(std :: forward<Self>(self).block);
+ }
+ else
+ {
+  return compose<0x00Fzu, 0x00Ezu, 0x00Dzu, 0x00Czu>(std :: forward<Self>(self).block);
+ }
 }
 
 template <system_config System, global_config Config> template <class Self>
@@ -205,3 +231,8 @@ constexpr inline std :: size_t superblock <System, Config> :: get_block_size() n
  }
 }
 
+template <system_config System, global_config Config> template <class Self>
+inline auto&& superblock <System, Config> :: get_block(this Self&& self) noexcept
+{
+ return std :: forward<Self>(self).block;
+}
