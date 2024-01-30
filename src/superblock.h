@@ -14,6 +14,7 @@ template <system_config System, global_config Config> class superblock
 {
  constexpr static bool has_inodes_count() noexcept;
  constexpr static bool has_free_blocks_count() noexcept;
+ constexpr static bool has_free_inodes_count() noexcept;
  constexpr static bool has_magic() noexcept;
  constexpr static bool has_creator_os() noexcept;
  constexpr static bool has_rev_level() noexcept;
@@ -22,7 +23,8 @@ template <system_config System, global_config Config> class superblock
  enum class magic_t;
  //Field getters
  template <class Self> auto get_inodes_count(this Self&& self) noexcept requires(has_inodes_count());
- template <class Self> auto get_free_blocks_count(this Self&& self) noexcept requires(has_free_blocks_count);
+ template <class Self> auto get_free_blocks_count(this Self&& self) noexcept requires(has_free_blocks_count());
+ template <class Self> auto get_free_inodes_count(this Self&& self) noexcept requires(has_free_inodes_count());
  template <class Self> auto get_magic(this Self&& self) noexcept requires(has_magic());
  template <class Self> auto get_creator_os(this Self&& self) noexcept requires(has_creator_os());
  template <class Self> auto get_rev_level(this Self&& self) noexcept requires(has_rev_level());
@@ -49,6 +51,12 @@ constexpr inline bool superblock <System, Config> :: has_inodes_count() noexcept
 
 template <system_config System, global_config Config>
 constexpr inline bool superblock <System, Config> :: has_free_blocks_count() noexcept
+{
+ return true;
+}
+
+template <system_config System, global_config Config>
+constexpr inline bool superblock <System, Config> :: has_free_inodes_count() noexcept
 {
  return true;
 }
@@ -127,6 +135,20 @@ requires(superblock <System, Config> :: has_free_blocks_count())
  else
  {
   return compose<0x00Fzu, 0x00Ezu, 0x00Dzu, 0x00Czu>(std :: forward<Self>(self).block);
+ }
+}
+
+template <system_config System, global_config Config> template <class Self>
+inline auto superblock <System, Config> :: get_free_inodes_count(this Self&& self) noexcept
+requires(superblock <System, Config> :: has_free_inodes_count())
+{
+ if constexpr (System.file_system == system_config :: file_system_t :: ext)
+ {
+  return compose<0x01Bzu, 0x01Azu, 0x019zu, 0x018zu>(std :: forward<Self>(self).block);
+ }
+ else
+ {
+  return compose<0x013zu, 0x012zu, 0x011zu, 0x010zu>(std :: forward<Self>(self).block);
  }
 }
 
