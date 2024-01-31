@@ -6,6 +6,7 @@
 #include "logger.h"
 #include "system_config.h"
 
+#include <chrono>
 #include <cstdint>
 #include <memory>
 #include <utility>
@@ -15,19 +16,32 @@ template <system_config System, global_config Config> class superblock
  constexpr static bool has_inodes_count() noexcept;
  constexpr static bool has_free_blocks_count() noexcept;
  constexpr static bool has_free_inodes_count() noexcept;
+ constexpr static bool has_mount_time() noexcept;
+ constexpr static bool has_write_time() noexcept;
  constexpr static bool has_magic() noexcept;
+ constexpr static bool has_last_check() noexcept;
  constexpr static bool has_creator_os() noexcept;
  constexpr static bool has_rev_level() noexcept;
+ constexpr static bool has_mkfs_time() noexcept;
+ constexpr static bool has_first_error_time() noexcept;
+ constexpr static bool has_last_error_time() noexcept;
  constexpr static bool has_lpf_ino() noexcept;
  public:
  enum class magic_t;
+ using time_point_t = std :: chrono :: time_point<std :: chrono :: file_clock>;
  //Field getters
  template <class Self> auto get_inodes_count(this Self&& self) noexcept requires(has_inodes_count());
  template <class Self> auto get_free_blocks_count(this Self&& self) noexcept requires(has_free_blocks_count());
  template <class Self> auto get_free_inodes_count(this Self&& self) noexcept requires(has_free_inodes_count());
+ template <class Self> auto get_mount_time(this Self&& self) noexcept requires(has_mount_time());
+ template <class Self> auto get_write_time(this Self&& self) noexcept requires(has_write_time());
  template <class Self> auto get_magic(this Self&& self) noexcept requires(has_magic());
+ template <class Self> auto get_last_check(this Self&& self) noexcept requires(has_last_check());
  template <class Self> auto get_creator_os(this Self&& self) noexcept requires(has_creator_os());
  template <class Self> auto get_rev_level(this Self&& self) noexcept requires(has_rev_level());
+ template <class Self> auto get_mkfs_time(this Self&& self) noexcept requires(has_mkfs_time());
+ template <class Self> auto get_first_error_time(this Self&& self) noexcept requires(has_first_error_time());
+ template <class Self> auto get_last_error_time(this Self&& self) noexcept requires(has_last_error_time());
  template <class Self> auto get_lpf_ino(this Self&& self) noexcept requires(has_lpf_ino());
  //Universal
  constexpr static std :: size_t get_block_size() noexcept;
@@ -62,9 +76,54 @@ constexpr inline bool superblock <System, Config> :: has_free_inodes_count() noe
 }
 
 template <system_config System, global_config Config>
+constexpr inline bool superblock <System, Config> :: has_mount_time() noexcept
+{
+ switch (System.file_system)
+ {
+  using enum system_config :: file_system_t;
+  case ext:
+  return false;
+  case ext2:
+  case ext3:
+  case ext4:
+  return true;
+ }
+}
+
+template <system_config System, global_config Config>
+constexpr inline bool superblock <System, Config> :: has_write_time() noexcept
+{
+ switch (System.file_system)
+ {
+  using enum system_config :: file_system_t;
+  case ext:
+  return false;
+  case ext2:
+  case ext3:
+  case ext4:
+  return true;
+ }
+}
+
+template <system_config System, global_config Config>
 constexpr inline bool superblock <System, Config> :: has_magic() noexcept
 {
  return true;
+}
+
+template <system_config System, global_config Config>
+constexpr inline bool superblock <System, Config> :: has_last_check() noexcept
+{
+ switch (System.file_system)
+ {
+  using enum system_config :: file_system_t;
+  case ext:
+  return false;
+  case ext2:
+  case ext3:
+  case ext4:
+  return true;
+ }
 }
 
 template <system_config System, global_config Config>
@@ -92,6 +151,51 @@ constexpr inline bool superblock <System, Config> :: has_rev_level() noexcept
   return false;
   case ext2:
   case ext3:
+  case ext4:
+  return true;
+ }
+}
+
+template <system_config System, global_config Config>
+constexpr inline bool superblock <System, Config> :: has_mkfs_time() noexcept
+{
+ switch (System.file_system)
+ {
+  using enum system_config :: file_system_t;
+  case ext:
+  case ext2:
+  case ext3:
+  return false;
+  case ext4:
+  return true;
+ }
+}
+
+template <system_config System, global_config Config>
+constexpr inline bool superblock <System, Config> :: has_first_error_time() noexcept
+{
+ switch (System.file_system)
+ {
+  using enum system_config :: file_system_t;
+  case ext:
+  case ext2:
+  case ext3:
+  return false;
+  case ext4:
+  return true;
+ }
+}
+
+template <system_config System, global_config Config>
+constexpr inline bool superblock <System, Config> :: has_last_error_time() noexcept
+{
+ switch (System.file_system)
+ {
+  using enum system_config :: file_system_t;
+  case ext:
+  case ext2:
+  case ext3:
+  return false;
   case ext4:
   return true;
  }
@@ -153,13 +257,36 @@ requires(superblock <System, Config> :: has_free_inodes_count())
 }
 
 template <system_config System, global_config Config> template <class Self>
+inline auto superblock <System, Config> :: get_mount_time(this Self&& self) noexcept
+requires(superblock <System, Config> :: has_mount_time())
+{
+ if (const auto mtime = compose<0x02Fzu, 0x02Ezu, 0x02Dzu, 0x02Czu>(std :: forward<Self>(self).block); !mtime)
+ {
+  logger<Config, log_level :: error>().log("Failed to read last mount time.");
+  return static_cast<std :: optional<time_point_t> >(std :: nullopt);
+ }
+ else return static_cast<time_point_t :: duration>(std :: chrono :: seconds(*mtime));
+}
+
+template <system_config System, global_config Config> template <class Self>
+inline auto superblock <System, Config> :: get_write_time(this Self&& self) noexcept
+requires(superblock <System, Config> :: has_write_time())
+{
+ if (const auto wtime = compose<0x033zu, 0x032zu, 0x031zu, 0x030zu>(std :: forward<Self>(self).block); !wtime)
+ {
+  logger<Config, log_level :: error>().log("Failed to read last write time.");
+  return static_cast<std :: optional<time_point_t> >(std :: nullopt);
+ }
+ else return static_cast<time_point_t :: duration>(std :: chrono :: seconds(*wtime));
+}
+
+template <system_config System, global_config Config> template <class Self>
 inline auto superblock <System, Config> :: get_magic(this Self&& self) noexcept
 requires(superblock <System, Config> :: has_magic())
 {
- 
  if (const auto magic = compose<0x039zu, 0x038zu>(std :: forward<Self>(self).block); !magic)
  {
-  logger<Config, log_level :: error> l; l.log("Failed to read magic.");
+  logger<Config, log_level :: error>().log("Failed to read magic.");
   return static_cast<std :: optional<magic_t> >(std :: nullopt);
  }
  else switch (*magic)
@@ -171,10 +298,22 @@ requires(superblock <System, Config> :: has_magic())
   return std :: make_optional<magic_t>(ext2_and_later);
   default:
   {
-   logger<Config, log_level :: error> l; l.log("Unknown magic: ", std :: hex, *magic);
+   logger<Config, log_level :: error>().log("Unknown magic: ", std :: hex, *magic);
    return static_cast<std :: optional<magic_t> >(std :: nullopt);
   }
  }
+}
+
+template <system_config System, global_config Config> template <class Self>
+inline auto superblock <System, Config> :: get_last_check(this Self&& self) noexcept
+requires(superblock <System, Config> :: has_last_check())
+{
+ if (const auto last = compose<0x043zu, 0x042zu, 0x041zu, 0x040zu>(std :: forward<Self>(self).block); !last)
+ {
+  logger<Config, log_level :: error>().log("Failed to read last check time.");
+  return static_cast<std :: optional<time_point_t> >(std :: nullopt);
+ }
+ else return static_cast<time_point_t :: duration>(std :: chrono :: seconds(*last));
 }
 
 template <system_config System, global_config Config> template <class Self>
@@ -183,7 +322,7 @@ requires(superblock <System, Config> :: has_creator_os())
 {
  if (const auto os = compose<0x04Bzu, 0x04Azu, 0x049zu, 0x048zu>(std :: forward<Self>(self).block); !os)
  {
-  logger<Config, log_level :: error> l; l.log("Failed to read creator OS.");
+  logger<Config, log_level :: error>().log("Failed to read creator OS.");
   return static_cast<std :: optional<system_config :: creator_os_t> >(std :: nullopt);
  }
  else switch (*os)
@@ -201,7 +340,7 @@ requires(superblock <System, Config> :: has_creator_os())
   return std :: make_optional<system_config :: creator_os_t>(lites);
   default:
   {
-   logger<Config, log_level :: error> l; l.log("Unknown creator OS: ", std :: hex, *os);
+   logger<Config, log_level :: error>().log("Unknown creator OS: ", std :: hex, *os);
    return static_cast<std :: optional<system_config :: creator_os_t> >(std :: nullopt);
   }
  }
@@ -213,7 +352,7 @@ requires(superblock <System, Config> :: has_rev_level())
 {
  if (const auto lev = compose<0x04Fzu, 0x04Ezu, 0x04Dzu, 0x04Czu>(std :: forward<Self>(self).block); !lev)
  {
-  logger<Config, log_level :: error> l; l.log("Failed to read revision level.");
+  logger<Config, log_level :: error>().log("Failed to read revision level.");
   return static_cast<std :: optional<system_config :: revision_t> >(std :: nullopt);
  }
  else switch (*lev)
@@ -225,10 +364,46 @@ requires(superblock <System, Config> :: has_rev_level())
   return std :: make_optional<system_config :: revision_t>(dynamic_rev);
   default:
   {
-   logger<Config, log_level :: error> l; l.log("Unknown revision level: ", std :: hex, *lev);
+   logger<Config, log_level :: error>().log("Unknown revision level: ", std :: hex, *lev);
    return static_cast<std :: optional<system_config :: revision_t> >(std :: nullopt);
   }
  }
+}
+
+template <system_config System, global_config Config> template <class Self>
+inline auto superblock <System, Config> :: get_mkfs_time(this Self&& self) noexcept
+requires(superblock <System, Config> :: has_mkfs_time())
+{
+ if (const auto created = compose<0x10Bzu, 0x10Azu, 0x109zu, 0x108zu>(std :: forward<Self>(self).block); !created)
+ {
+  logger<Config, log_level :: error>().log("Failed to read creation time.");
+  return static_cast<std :: optional<time_point_t> >(std :: nullopt);
+ }
+ else return static_cast<time_point_t :: duration>(std :: chrono :: seconds(*created));
+}
+
+template <system_config System, global_config Config> template <class Self>
+inline auto superblock <System, Config> :: get_first_error_time(this Self&& self) noexcept
+requires(superblock <System, Config> :: has_first_error_time())
+{
+ if (const auto created = compose<0x19Bzu, 0x19Azu, 0x199zu, 0x198zu>(std :: forward<Self>(self).block); !created)
+ {
+  logger<Config, log_level :: error>().log("Failed to read first error time.");
+  return static_cast<std :: optional<time_point_t> >(std :: nullopt);
+ }
+ else return static_cast<time_point_t :: duration>(std :: chrono :: seconds(*created));
+}
+
+template <system_config System, global_config Config> template <class Self>
+inline auto superblock <System, Config> :: get_last_error_time(this Self&& self) noexcept
+requires(superblock <System, Config> :: has_last_error_time())
+{
+ if (const auto created = compose<0x1CFzu, 0x1CEzu, 0x1CDzu, 0x1CCzu>(std :: forward<Self>(self).block); !created)
+ {
+  logger<Config, log_level :: error>().log("Failed to read last error time.");
+  return static_cast<std :: optional<time_point_t> >(std :: nullopt);
+ }
+ else return static_cast<time_point_t :: duration>(std :: chrono :: seconds(*created));
 }
 
 template <system_config System, global_config Config> template <class Self>
