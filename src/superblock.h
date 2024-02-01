@@ -14,6 +14,8 @@
 template <system_config System, global_config Config> class superblock
 {
  constexpr static bool has_inodes_count() noexcept;
+ constexpr static bool has_blocks_count() noexcept;
+ constexpr static bool has_reserved_blocks_count() noexcept;
  constexpr static bool has_free_blocks_count() noexcept;
  constexpr static bool has_free_inodes_count() noexcept;
  constexpr static bool has_mount_time() noexcept;
@@ -31,6 +33,8 @@ template <system_config System, global_config Config> class superblock
  using time_point_t = std :: chrono :: time_point<std :: chrono :: file_clock>;
  //Field getters
  template <class Self> auto get_inodes_count(this Self&& self) noexcept requires(has_inodes_count());
+ template <class Self> auto get_blocks_count(this Self&& self) noexcept requires(has_blocks_count());
+ template <class Self> auto get_reserved_blocks_count(this Self&& self) noexcept requires(has_reserved_blocks_count());
  template <class Self> auto get_free_blocks_count(this Self&& self) noexcept requires(has_free_blocks_count());
  template <class Self> auto get_free_inodes_count(this Self&& self) noexcept requires(has_free_inodes_count());
  template <class Self> auto get_mount_time(this Self&& self) noexcept requires(has_mount_time());
@@ -61,6 +65,36 @@ template <system_config System, global_config Config>
 constexpr inline bool superblock <System, Config> :: has_inodes_count() noexcept
 {
  return true;
+}
+
+template <system_config System, global_config Config>
+constexpr inline bool superblock <System, Config> :: has_blocks_count() noexcept
+{
+ switch (System.file_system)
+ {
+  using enum system_config :: file_system_t;
+  case ext:
+  return false;
+  case ext2:
+  case ext3:
+  case ext4:
+  return true;
+ }
+}
+
+template <system_config System, global_config Config>
+constexpr inline bool superblock <System, Config> :: has_reserved_blocks_count() noexcept
+{
+ switch (System.file_system)
+ {
+  using enum system_config :: file_system_t;
+  case ext:
+  return false;
+  case ext2:
+  case ext3:
+  case ext4:
+  return true;
+ }
 }
 
 template <system_config System, global_config Config>
@@ -221,6 +255,34 @@ inline auto superblock <System, Config> :: get_inodes_count(this Self&& self) no
 requires(superblock <System, Config> :: has_inodes_count())
 {
  return compose<0x003zu, 0x002zu, 0x001zu, 0x000zu>(std :: forward<Self>(self).block);
+}
+
+template <system_config System, global_config Config> template <class Self>
+inline auto superblock <System, Config> :: get_blocks_count(this Self&& self) noexcept
+requires(superblock <System, Config> :: has_blocks_count())
+{
+ if constexpr ((System.file_system == ext4) && System.feature_compat_64bit)
+ {
+  return compose<0x153zu, 0x152zu, 0x151zu, 0x150zu, 0x007zu, 0x006zu, 0x005zu, 0x004zu>(std :: forward<Self>(self).block);
+ }
+ else
+ {
+  return compose<0x007zu, 0x006zu, 0x005zu, 0x004zu>(std :: forward<Self>(self).block);
+ }
+}
+
+template <system_config System, global_config Config> template <class Self>
+inline auto superblock <System, Config> :: get_reserved_blocks_count(this Self&& self) noexcept
+requires(superblock <System, Config> :: has_reserved_blocks_count())
+{
+ if constexpr ((System.file_system == ext4) && System.feature_compat_64bit)
+ {
+  return compose<0x157zu, 0x156zu, 0x155zu, 0x154zu, 0x00Bzu, 0x00Azu, 0x009zu, 0x008zu>(std :: forward<Self>(self).block);
+ }
+ else
+ {
+  return compose<0x00Bzu, 0x00Azu, 0x009zu, 0x008zu>(std :: forward<Self>(self).block);
+ }
 }
 
 template <system_config System, global_config Config> template <class Self>
