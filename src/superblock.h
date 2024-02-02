@@ -21,6 +21,9 @@ template <system_config System, global_config Config> class superblock
  constexpr static bool has_reserved_blocks_count() noexcept;
  constexpr static bool has_free_blocks_count() noexcept;
  constexpr static bool has_free_inodes_count() noexcept;
+ constexpr static bool has_first_data_block() noexcept;
+ constexpr static bool has_log_block_size() noexcept;
+ constexpr static bool has_blocks_per_group() noexcept;
  constexpr static bool has_mount_time() noexcept;
  constexpr static bool has_write_time() noexcept;
  constexpr static bool has_magic() noexcept;
@@ -40,6 +43,9 @@ template <system_config System, global_config Config> class superblock
  template <class Self> auto get_reserved_blocks_count(this Self&& self) noexcept requires(has_reserved_blocks_count());
  template <class Self> auto get_free_blocks_count(this Self&& self) noexcept requires(has_free_blocks_count());
  template <class Self> auto get_free_inodes_count(this Self&& self) noexcept requires(has_free_inodes_count());
+ template <class Self> auto get_first_data_block(this Self&& self) noexcept requires(has_first_data_block());
+ template <class Self> auto get_log_block_size(this Self&& self) noexcept requires(has_log_block_size());
+ template <class Self> auto get_blocks_per_group(this Self&& self) noexcept requires(has_blocks_per_group());
  template <class Self> auto get_mount_time(this Self&& self) noexcept requires(has_mount_time());
  template <class Self> auto get_write_time(this Self&& self) noexcept requires(has_write_time());
  template <class Self> auto get_magic(this Self&& self) noexcept requires(has_magic());
@@ -61,6 +67,9 @@ template <system_config System, global_config Config> class superblock
  constexpr static auto get_reserved_blocks_count_indices() noexcept requires(has_reserved_blocks_count());
  constexpr static auto get_free_blocks_count_indices() noexcept requires(has_free_blocks_count());
  constexpr static auto get_free_inodes_count_indices() noexcept requires(has_free_inodes_count());
+ constexpr static auto get_first_data_block_indices() noexcept requires(has_first_data_block());
+ constexpr static auto get_log_block_size_indices() noexcept requires(has_log_block_size());
+ constexpr static auto get_blocks_per_group_indices() noexcept requires(has_blocks_per_group());
  constexpr static auto get_mount_time_indices() noexcept requires(has_mount_time());
  constexpr static auto get_write_time_indices() noexcept requires(has_write_time());
  constexpr static auto get_magic_indices() noexcept requires(has_magic());
@@ -127,6 +136,51 @@ template <system_config System, global_config Config>
 constexpr inline bool superblock <System, Config> :: has_free_inodes_count() noexcept
 {
  return true;
+}
+
+template <system_config System, global_config Config>
+constexpr inline bool superblock <System, Config> :: has_first_data_block() noexcept
+{
+ switch (System.file_system)
+ {
+  using enum system_config :: file_system_t;
+  case ext:
+  return false;
+  case ext2:
+  case ext3:
+  case ext4:
+  return true;
+ }
+}
+
+template <system_config System, global_config Config>
+constexpr inline bool superblock <System, Config> :: has_log_block_size() noexcept
+{
+ switch (System.file_system)
+ {
+  using enum system_config :: file_system_t;
+  case ext:
+  return false;
+  case ext2:
+  case ext3:
+  case ext4:
+  return true;
+ }
+}
+
+template <system_config System, global_config Config>
+constexpr inline bool superblock <System, Config> :: has_blocks_per_group() noexcept
+{
+ switch (System.file_system)
+ {
+  using enum system_config :: file_system_t;
+  case ext:
+  return false;
+  case ext2:
+  case ext3:
+  case ext4:
+  return true;
+ }
 }
 
 template <system_config System, global_config Config>
@@ -303,6 +357,27 @@ inline auto superblock <System, Config> :: get_free_inodes_count(this Self&& sel
 requires(superblock <System, Config> :: has_free_inodes_count())
 {
  return std :: forward<Self>(self).read(get_free_inodes_count_indices());
+}
+
+template <system_config System, global_config Config> template <class Self>
+inline auto superblock <System, Config> :: get_first_data_block(this Self&& self) noexcept
+requires(superblock <System, Config> :: has_first_data_block())
+{
+ return std :: forward<Self>(self).read(get_first_data_block_indices());
+}
+
+template <system_config System, global_config Config> template <class Self>
+inline auto superblock <System, Config> :: get_log_block_size(this Self&& self) noexcept
+requires(superblock <System, Config> :: has_log_block_size())
+{
+ return std :: forward<Self>(self).read(get_log_block_size_indices());
+}
+
+template <system_config System, global_config Config> template <class Self>
+inline auto superblock <System, Config> :: get_blocks_per_group(this Self&& self) noexcept
+requires(superblock <System, Config> :: has_blocks_per_group())
+{
+ return std :: forward<Self>(self).read(get_blocks_per_group_indices());
 }
 
 template <system_config System, global_config Config> template <class Self>
@@ -558,6 +633,27 @@ requires(superblock <System, Config> :: has_free_inodes_count())
  {
   return std :: index_sequence<0x013zu, 0x012zu, 0x011zu, 0x010zu>();
  }
+}
+
+template <system_config System, global_config Config>
+constexpr inline auto superblock <System, Config> :: get_first_data_block_indices() noexcept
+requires(superblock <System, Config> :: has_first_data_block())
+{
+ return std :: index_sequence<0x017zu, 0x016zu, 0x015zu, 0x014zu>();
+}
+
+template <system_config System, global_config Config>
+constexpr inline auto superblock <System, Config> :: get_log_block_size_indices() noexcept
+requires(superblock <System, Config> :: has_log_block_size())
+{
+ return std :: index_sequence<0x01Bzu, 0x01Azu, 0x019zu, 0x018zu>();
+}
+
+template <system_config System, global_config Config>
+constexpr inline auto superblock <System, Config> :: get_blocks_per_group_indices() noexcept
+requires(superblock <System, Config> :: has_blocks_per_group())
+{
+ return std :: index_sequence<0x023zu, 0x022zu, 0x021zu, 0x020zu>();
 }
 
 template <system_config System, global_config Config>
