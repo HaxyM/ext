@@ -33,6 +33,32 @@ class logger
  private:
  static std :: ostream& getOutput() noexcept;
  static std :: optional<std :: unique_lock<std :: mutex> > getLock();
+ template <bool has_location, bool has_trace, class ... Empty> struct content;
+ template <class ... Empty> struct content<false, false, Empty...>{};
+ template <class ... Empty> struct content<false, true, Empty...>;
+ template <class ... Empty> struct content<true, false, Empty...>;
+ template <class ... Empty> struct content<true, true, Empty...>;
+ content<useSourceLocation(), useStackTrace()> cont;
+};
+
+template <global_config Config, log_level Level>
+template <class ... Empty>
+struct logger <Config, Level> :: template content<false, true, Empty...>
+{
+ std :: stacktrace trace;
+};
+
+template <global_config Config, log_level Level>
+template <class ... Empty>
+struct logger <Config, Level> :: template content<true, false, Empty...>
+{
+ std :: source_location location;
+};
+
+template <global_config Config, log_level Level>
+template <class ... Empty>
+struct logger <Config, Level> :: template content<true, true, Empty...>
+{
  std :: source_location location;
  std :: stacktrace trace;
 };
@@ -72,22 +98,21 @@ requires(!logger <Config, Level> :: useSourceLocation() && !logger <Config, Leve
 template <global_config Config, log_level Level>
 inline logger <Config, Level> :: logger(std :: stacktrace&& t) noexcept
 requires(!logger <Config, Level> :: useSourceLocation() && logger <Config, Level> :: useStackTrace())
-	: trace(std :: forward<std :: stacktrace>(t))
+	: cont{.trace = std :: forward<std :: stacktrace>(t)}
 {
 }
 
 template <global_config Config, log_level Level>
 inline logger <Config, Level> :: logger(std :: source_location&& l) noexcept
 requires(logger <Config, Level> :: useSourceLocation() && !logger <Config, Level> :: useStackTrace())
-	: location(std :: forward<std :: source_location>(l))
+	: cont{.location = std :: forward<std :: source_location>(l)}
 {
 }
 
 template <global_config Config, log_level Level>
 inline logger <Config, Level> :: logger(std :: source_location&& l, std :: stacktrace&& t) noexcept
 requires(logger <Config, Level> :: useSourceLocation() && logger <Config, Level> :: useStackTrace())
-	: location(std :: forward<std :: source_location>(l))
-	, trace(std :: forward<std :: stacktrace>(t))
+	: cont{.location = std :: forward<std :: source_location>(l), .trace = std :: forward<std :: stacktrace>(t)}
 {
 }
 
@@ -105,12 +130,12 @@ inline bool logger <Config, Level> :: log(Args&& ... args) noexcept
    const auto lock = getLock();
    if constexpr (useSourceLocation())
    {
-    output << location.file_name() << " at " << location.line() << ": ";
+    output << cont.location.file_name() << " at " << cont.location.line() << ": ";
     output << std :: format("{0:%F_%T}", std :: chrono :: system_clock :: now()) << ' ';
    }
    if constexpr (useStackTrace())
    {
-    return static_cast<bool>((output << ... << std :: forward<Args>(args)) << std :: endl << trace << std :: endl);
+    return static_cast<bool>((output << ... << std :: forward<Args>(args)) << std :: endl << cont.trace << std :: endl);
    }
    else return static_cast<bool>((output << ... << std :: forward<Args>(args)) << std :: endl);
   }
@@ -137,4 +162,3 @@ inline std :: optional<std :: unique_lock<std :: mutex> > logger <Config, Level>
  }
  return std :: nullopt;
 }
-
