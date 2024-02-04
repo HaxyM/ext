@@ -562,7 +562,7 @@ template <system_config System, global_config Config>
 template <class Self, std :: size_t ... Indices>
 inline auto superblock <System, Config> :: read(this Self&& self, std :: index_sequence<Indices...>) noexcept
 {
- return compose<Indices...>(std :: forward<Self>(self).block);
+ return composer <Config> :: template compose<Indices...>(std :: forward<Self>(self).block);
 }
 
 template <system_config System, global_config Config>
