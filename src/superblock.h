@@ -26,15 +26,20 @@ template <system_config System, global_config Config> class superblock
  constexpr static bool has_log_cluster_size() noexcept;
  constexpr static bool has_blocks_per_group() noexcept;
  constexpr static bool has_clusters_per_group() noexcept;
+ constexpr static bool has_inodes_per_group() noexcept;
  constexpr static bool has_mount_time() noexcept;
  constexpr static bool has_write_time() noexcept;
  constexpr static bool has_magic() noexcept;
  constexpr static bool has_last_check() noexcept;
  constexpr static bool has_creator_os() noexcept;
  constexpr static bool has_rev_level() noexcept;
+ constexpr static bool has_first_inode() noexcept;
+ constexpr static bool has_inode_size() noexcept;
  constexpr static bool has_mkfs_time() noexcept;
  constexpr static bool has_first_error_time() noexcept;
+ constexpr static bool has_first_error_inode() noexcept;
  constexpr static bool has_last_error_time() noexcept;
+ constexpr static bool has_last_error_inode() noexcept;
  constexpr static bool has_lpf_ino() noexcept;
  //Subtypes
  enum class magic_t;
@@ -50,15 +55,20 @@ template <system_config System, global_config Config> class superblock
  template <class Self> auto get_log_cluster_size(this Self&& self) noexcept requires(has_log_cluster_size());
  template <class Self> auto get_blocks_per_group(this Self&& self) noexcept requires(has_blocks_per_group());
  template <class Self> auto get_clusters_per_group(this Self&& self) noexcept requires(has_clusters_per_group());
+ template <class Self> auto get_inodes_per_group(this Self&& self) noexcept requires(has_inodes_per_group());
  template <class Self> auto get_mount_time(this Self&& self) noexcept requires(has_mount_time());
  template <class Self> auto get_write_time(this Self&& self) noexcept requires(has_write_time());
  template <class Self> auto get_magic(this Self&& self) noexcept requires(has_magic());
  template <class Self> auto get_last_check(this Self&& self) noexcept requires(has_last_check());
  template <class Self> auto get_creator_os(this Self&& self) noexcept requires(has_creator_os());
  template <class Self> auto get_rev_level(this Self&& self) noexcept requires(has_rev_level());
+ template <class Self> auto get_first_inode(this Self&& self) noexcept requires(has_first_inode());
+ template <class Self> auto get_inode_size(this Self&& self) noexcept requires(has_inode_size());
  template <class Self> auto get_mkfs_time(this Self&& self) noexcept requires(has_mkfs_time());
  template <class Self> auto get_first_error_time(this Self&& self) noexcept requires(has_first_error_time());
+ template <class Self> auto get_first_error_inode(this Self&& self) noexcept requires(has_first_error_inode());
  template <class Self> auto get_last_error_time(this Self&& self) noexcept requires(has_last_error_time());
+ template <class Self> auto get_last_error_inode(this Self&& self) noexcept requires(has_last_error_inode());
  template <class Self> auto get_lpf_ino(this Self&& self) noexcept requires(has_lpf_ino());
  //Universal
  constexpr static std :: size_t get_block_size() noexcept;
@@ -76,15 +86,20 @@ template <system_config System, global_config Config> class superblock
  constexpr static auto get_log_cluster_size_indices() noexcept requires(has_log_cluster_size());
  constexpr static auto get_blocks_per_group_indices() noexcept requires(has_blocks_per_group());
  constexpr static auto get_clusters_per_group_indices() noexcept requires(has_clusters_per_group());
+ constexpr static auto get_inodes_per_group_indices() noexcept requires(has_inodes_per_group());
  constexpr static auto get_mount_time_indices() noexcept requires(has_mount_time());
  constexpr static auto get_write_time_indices() noexcept requires(has_write_time());
  constexpr static auto get_magic_indices() noexcept requires(has_magic());
  constexpr static auto get_last_check_indices() noexcept requires(has_last_check());
  constexpr static auto get_creator_os_indices() noexcept requires(has_creator_os());
  constexpr static auto get_rev_level_indices() noexcept requires(has_rev_level());
+ constexpr static auto get_first_inode_indices() noexcept requires(has_first_inode());
+ constexpr static auto get_inode_size_indices() noexcept requires(has_inode_size());
  constexpr static auto get_mkfs_time_indices() noexcept requires(has_mkfs_time());
  constexpr static auto get_first_error_time_indices() noexcept requires(has_first_error_time());
+ constexpr static auto get_first_error_inode_indices() noexcept requires(has_first_error_inode());
  constexpr static auto get_last_error_time_indices() noexcept requires(has_last_error_time());
+ constexpr static auto get_last_error_inode_indices() noexcept requires(has_last_error_inode());
  constexpr static auto get_lpf_ino_indices() noexcept requires(has_lpf_ino());
  std :: shared_ptr<content<get_block_size(), Config> > block;
 };
@@ -220,6 +235,21 @@ constexpr inline bool superblock <System, Config> :: has_clusters_per_group() no
 }
 
 template <system_config System, global_config Config>
+constexpr inline bool superblock <System, Config> :: has_inodes_per_group() noexcept
+{
+ switch (System.file_system)
+ {
+  using enum system_config :: file_system_t;
+  case ext:
+  return false;
+  case ext2:
+  case ext3:
+  case ext4:
+  return true;
+ }
+}
+
+template <system_config System, global_config Config>
 constexpr inline bool superblock <System, Config> :: has_mount_time() noexcept
 {
  switch (System.file_system)
@@ -301,6 +331,50 @@ constexpr inline bool superblock <System, Config> :: has_rev_level() noexcept
 }
 
 template <system_config System, global_config Config>
+constexpr inline bool superblock <System, Config> :: has_first_inode() noexcept
+{
+ switch (System.file_system)
+ {
+  using enum system_config :: file_system_t;
+  case ext:
+  return false;
+  case ext2:
+  case ext3:
+  case ext4:
+  switch (System.revision)
+  {
+   using enum system_config :: revision_t;
+   case good_old_rev:
+   return false;
+   case dynamic_rev:
+   return true;
+  }
+ }
+}
+
+template <system_config System, global_config Config>
+constexpr inline bool superblock <System, Config> :: has_inode_size() noexcept
+{
+ switch (System.file_system)
+ {
+  using enum system_config :: file_system_t;
+  case ext:
+  return false;
+  case ext2:
+  case ext3:
+  case ext4:
+  switch (System.revision)
+  {
+   using enum system_config :: revision_t;
+   case good_old_rev:
+   return false;
+   case dynamic_rev:
+   return true;
+  }
+ }
+}
+
+template <system_config System, global_config Config>
 constexpr inline bool superblock <System, Config> :: has_mkfs_time() noexcept
 {
  switch (System.file_system)
@@ -331,7 +405,37 @@ constexpr inline bool superblock <System, Config> :: has_first_error_time() noex
 }
 
 template <system_config System, global_config Config>
+constexpr inline bool superblock <System, Config> :: has_first_error_inode() noexcept
+{
+ switch (System.file_system)
+ {
+  using enum system_config :: file_system_t;
+  case ext:
+  case ext2:
+  case ext3:
+  return false;
+  case ext4:
+  return true;
+ }
+}
+
+template <system_config System, global_config Config>
 constexpr inline bool superblock <System, Config> :: has_last_error_time() noexcept
+{
+ switch (System.file_system)
+ {
+  using enum system_config :: file_system_t;
+  case ext:
+  case ext2:
+  case ext3:
+  return false;
+  case ext4:
+  return true;
+ }
+}
+
+template <system_config System, global_config Config>
+constexpr inline bool superblock <System, Config> :: has_last_error_inode() noexcept
 {
  switch (System.file_system)
  {
@@ -428,6 +532,13 @@ inline auto superblock <System, Config> :: get_clusters_per_group(this Self&& se
 requires(superblock <System, Config> :: has_clusters_per_group())
 {
  return std :: forward<Self>(self).read(get_clusters_per_group_indices());
+}
+
+template <system_config System, global_config Config> template <class Self>
+inline auto superblock <System, Config> :: get_inodes_per_group(this Self&& self) noexcept
+requires(superblock <System, Config> :: has_inodes_per_group())
+{
+ return std :: forward<Self>(self).read(get_inodes_per_group_indices());
 }
 
 template <system_config System, global_config Config> template <class Self>
@@ -545,6 +656,20 @@ requires(superblock <System, Config> :: has_rev_level())
 }
 
 template <system_config System, global_config Config> template <class Self>
+inline auto superblock <System, Config> :: get_first_inode(this Self&& self) noexcept
+requires(superblock <System, Config> :: has_first_inode())
+{
+ return std :: forward<Self>(self).read(get_first_inode_indices());
+}
+
+template <system_config System, global_config Config> template <class Self>
+inline auto superblock <System, Config> :: get_inode_size(this Self&& self) noexcept
+requires(superblock <System, Config> :: has_inode_size())
+{
+ return std :: forward<Self>(self).read(get_inode_size_indices());
+}
+
+template <system_config System, global_config Config> template <class Self>
 inline auto superblock <System, Config> :: get_mkfs_time(this Self&& self) noexcept
 requires(superblock <System, Config> :: has_mkfs_time())
 {
@@ -569,6 +694,13 @@ requires(superblock <System, Config> :: has_first_error_time())
 }
 
 template <system_config System, global_config Config> template <class Self>
+inline auto superblock <System, Config> :: get_first_error_inode(this Self&& self) noexcept
+requires(superblock <System, Config> :: has_first_error_inode())
+{
+ return std :: forward<Self>(self).read(get_first_error_inode_indices());
+}
+
+template <system_config System, global_config Config> template <class Self>
 inline auto superblock <System, Config> :: get_last_error_time(this Self&& self) noexcept
 requires(superblock <System, Config> :: has_last_error_time())
 {
@@ -578,6 +710,13 @@ requires(superblock <System, Config> :: has_last_error_time())
   return static_cast<std :: optional<time_point_t> >(std :: nullopt);
  }
  else return static_cast<time_point_t :: duration>(std :: chrono :: seconds(*last));
+}
+
+template <system_config System, global_config Config> template <class Self>
+inline auto superblock <System, Config> :: get_last_error_inode(this Self&& self) noexcept
+requires(superblock <System, Config> :: has_last_error_inode())
+{
+ return std :: forward<Self>(self).read(get_last_error_inode_indices());
 }
 
 template <system_config System, global_config Config> template <class Self>
@@ -721,6 +860,13 @@ requires(superblock <System, Config> :: has_clusters_per_group())
 }
 
 template <system_config System, global_config Config>
+constexpr inline auto superblock <System, Config> :: get_inodes_per_group_indices() noexcept
+requires(superblock <System, Config> :: has_inodes_per_group())
+{
+ return std :: index_sequence<0x02Bzu, 0x02Azu, 0x029zu, 0x028zu>();
+}
+
+template <system_config System, global_config Config>
 constexpr inline auto superblock <System, Config> :: get_mount_time_indices() noexcept
 requires(superblock <System, Config> :: has_mount_time())
 {
@@ -763,6 +909,20 @@ requires(superblock <System, Config> :: has_rev_level())
 }
 
 template <system_config System, global_config Config>
+constexpr inline auto superblock <System, Config> :: get_first_inode_indices() noexcept
+requires(superblock <System, Config> :: has_first_inode())
+{
+ return std :: index_sequence<0x057zu, 0x056zu, 0x055zu, 0x054zu>();
+}
+
+template <system_config System, global_config Config>
+constexpr inline auto superblock <System, Config> :: get_inode_size_indices() noexcept
+requires(superblock <System, Config> :: has_inode_size())
+{
+ return std :: index_sequence<0x05Bzu, 0x05Azu, 0x059zu, 0x058zu>();
+}
+
+template <system_config System, global_config Config>
 constexpr inline auto superblock <System, Config> :: get_mkfs_time_indices() noexcept
 requires(superblock <System, Config> :: has_mkfs_time())
 {
@@ -777,10 +937,24 @@ requires(superblock <System, Config> :: has_first_error_time())
 }
 
 template <system_config System, global_config Config>
+constexpr inline auto superblock <System, Config> :: get_first_error_inode_indices() noexcept
+requires(superblock <System, Config> :: has_first_error_inode())
+{
+ return std :: index_sequence<0x19Fzu, 0x19Ezu, 0x19Dzu, 0x19Czu>();
+}
+
+template <system_config System, global_config Config>
 constexpr inline auto superblock <System, Config> :: get_last_error_time_indices() noexcept
 requires(superblock <System, Config> :: has_last_error_time())
 {
  return std :: index_sequence<0x1CFzu, 0x1CEzu, 0x1CDzu, 0x1CCzu>();
+}
+
+template <system_config System, global_config Config>
+constexpr inline auto superblock <System, Config> :: get_last_error_inode_indices() noexcept
+requires(superblock <System, Config> :: has_last_error_inode())
+{
+ return std :: index_sequence<0x1D3zu, 0x1D2zu, 0x1D1zu, 0x1D0zu>();
 }
 
 template <system_config System, global_config Config>
