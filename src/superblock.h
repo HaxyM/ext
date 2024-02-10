@@ -35,6 +35,9 @@ template <system_config System, global_config Config> class superblock
  constexpr static bool has_rev_level() noexcept;
  constexpr static bool has_first_inode() noexcept;
  constexpr static bool has_inode_size() noexcept;
+ constexpr static bool has_feature_compat() noexcept;
+ constexpr static bool has_feature_incompat() noexcept;
+ constexpr static bool has_feature_ro_compat() noexcept;
  constexpr static bool has_mkfs_time() noexcept;
  constexpr static bool has_first_error_time() noexcept;
  constexpr static bool has_first_error_inode() noexcept;
@@ -64,6 +67,9 @@ template <system_config System, global_config Config> class superblock
  template <class Self> auto get_rev_level(this Self&& self) noexcept requires(has_rev_level());
  template <class Self> auto get_first_inode(this Self&& self) noexcept requires(has_first_inode());
  template <class Self> auto get_inode_size(this Self&& self) noexcept requires(has_inode_size());
+ template <class Self> auto get_feature_compat(this Self&& self) noexcept requires(has_feature_compat());
+ template <class Self> auto get_feature_incompat(this Self&& self) noexcept requires(has_feature_incompat());
+ template <class Self> auto get_feature_ro_compat(this Self&& self) noexcept requires(has_feature_ro_compat());
  template <class Self> auto get_mkfs_time(this Self&& self) noexcept requires(has_mkfs_time());
  template <class Self> auto get_first_error_time(this Self&& self) noexcept requires(has_first_error_time());
  template <class Self> auto get_first_error_inode(this Self&& self) noexcept requires(has_first_error_inode());
@@ -94,6 +100,9 @@ template <system_config System, global_config Config> class superblock
  constexpr static auto get_creator_os_indices() noexcept requires(has_creator_os());
  constexpr static auto get_rev_level_indices() noexcept requires(has_rev_level());
  constexpr static auto get_first_inode_indices() noexcept requires(has_first_inode());
+ constexpr static auto get_feature_compat_indices() noexcept requires(has_feature_compat());
+ constexpr static auto get_feature_incompat_indices() noexcept requires(has_feature_incompat());
+ constexpr static auto get_feature_ro_compat_indices() noexcept requires(has_feature_ro_compat());
  constexpr static auto get_inode_size_indices() noexcept requires(has_inode_size());
  constexpr static auto get_mkfs_time_indices() noexcept requires(has_mkfs_time());
  constexpr static auto get_first_error_time_indices() noexcept requires(has_first_error_time());
@@ -355,6 +364,72 @@ constexpr inline bool superblock <System, Config> :: has_first_inode() noexcept
 
 template <system_config System, global_config Config>
 constexpr inline bool superblock <System, Config> :: has_inode_size() noexcept
+{
+ switch (System.file_system)
+ {
+  using enum system_config :: file_system_t;
+  case ext:
+  return false;
+  case ext2:
+  case ext3:
+  case ext4:
+  switch (System.revision)
+  {
+   using enum system_config :: revision_t;
+   case good_old_rev:
+   return false;
+   case dynamic_rev:
+   return true;
+  }
+ }
+}
+
+template <system_config System, global_config Config>
+constexpr inline bool superblock <System, Config> :: has_feature_compat() noexcept
+{
+ switch (System.file_system)
+ {
+  using enum system_config :: file_system_t;
+  case ext:
+  return false;
+  case ext2:
+  case ext3:
+  case ext4:
+  switch (System.revision)
+  {
+   using enum system_config :: revision_t;
+   case good_old_rev:
+   return false;
+   case dynamic_rev:
+   return true;
+  }
+ }
+}
+
+template <system_config System, global_config Config>
+constexpr inline bool superblock <System, Config> :: has_feature_incompat() noexcept
+{
+ switch (System.file_system)
+ {
+  using enum system_config :: file_system_t;
+  case ext:
+  return false;
+  case ext2:
+  case ext3:
+  case ext4:
+  switch (System.revision)
+  {
+   using enum system_config :: revision_t;
+   case good_old_rev:
+   return false;
+   case dynamic_rev:
+   return true;
+  }
+ }
+}
+
+template <system_config System, global_config Config>
+constexpr inline bool superblock <System, Config> :: has_feature_ro_compat() noexcept
 {
  switch (System.file_system)
  {
@@ -673,6 +748,42 @@ requires(superblock <System, Config> :: has_inode_size())
 }
 
 template <system_config System, global_config Config> template <class Self>
+inline auto superblock <System, Config> :: get_feature_compat(this Self&& self) noexcept
+requires(superblock <System, Config> :: has_feature_compat())
+{
+ if (const auto feature = std :: forward<Self>(self).read(get_feature_compat_indices()); !feature)
+ {
+  logger<Config, log_level :: error>().log("Failed to read feature compat.");
+  return static_cast<std :: optional<system_config :: feature_compat_t> >(std :: nullopt);
+ }
+ else return std :: make_optional<system_config :: feature_compat_t>(*feature);
+}
+
+template <system_config System, global_config Config> template <class Self>
+inline auto superblock <System, Config> :: get_feature_incompat(this Self&& self) noexcept
+requires(superblock <System, Config> :: has_feature_incompat())
+{
+ if (const auto feature = std :: forward<Self>(self).read(get_feature_incompat_indices()); !feature)
+ {
+  logger<Config, log_level :: error>().log("Failed to read feature incompat.");
+  return static_cast<std :: optional<system_config :: feature_incompat_t> >(std :: nullopt);
+ }
+ else return std :: make_optional<system_config :: feature_incompat_t>(*feature);
+}
+
+template <system_config System, global_config Config> template <class Self>
+inline auto superblock <System, Config> :: get_feature_ro_compat(this Self&& self) noexcept
+requires(superblock <System, Config> :: has_feature_ro_compat())
+{
+ if (const auto feature = std :: forward<Self>(self).read(get_feature_ro_compat_indices()); !feature)
+ {
+  logger<Config, log_level :: error>().log("Failed to read feature read-only compat.");
+  return static_cast<std :: optional<system_config :: feature_ro_compat_t> >(std :: nullopt);
+ }
+ else return std :: make_optional<system_config :: feature_ro_compat_t>(*feature);
+}
+
+template <system_config System, global_config Config> template <class Self>
 inline auto superblock <System, Config> :: get_mkfs_time(this Self&& self) noexcept
 requires(superblock <System, Config> :: has_mkfs_time())
 {
@@ -761,12 +872,6 @@ template <system_config System, global_config Config>
 constexpr inline auto superblock <System, Config> :: get_inodes_count_indices() noexcept
 requires(superblock <System, Config> :: has_inodes_count())
 {
- using enum system_config :: file_system_t;
- if constexpr (is_flag_set<System, system_config :: feature_compat_flags <ext3> :: lazy_bg>())
- {
-  return std :: index_sequence<0x153zu, 0x152zu, 0x151zu, 0x150zu, 0x007zu, 0x006zu, 0x005zu, 0x004zu>();
- }
- else
  return std :: index_sequence<0x003zu, 0x002zu, 0x001zu, 0x000zu>();
 }
 
@@ -928,7 +1033,28 @@ template <system_config System, global_config Config>
 constexpr inline auto superblock <System, Config> :: get_inode_size_indices() noexcept
 requires(superblock <System, Config> :: has_inode_size())
 {
- return std :: index_sequence<0x05Bzu, 0x05Azu, 0x059zu, 0x058zu>();
+ return std :: index_sequence<0x059zu, 0x058zu>();
+}
+
+template <system_config System, global_config Config>
+constexpr inline auto superblock <System, Config> :: get_feature_compat_indices() noexcept
+requires(superblock <System, Config> :: has_feature_compat())
+{
+ return std :: index_sequence<0x05Fzu, 0x05Ezu, 0x05Dzu, 0x05Czu>();
+}
+
+template <system_config System, global_config Config>
+constexpr inline auto superblock <System, Config> :: get_feature_incompat_indices() noexcept
+requires(superblock <System, Config> :: has_feature_incompat())
+{
+ return std :: index_sequence<0x063zu, 0x062zu, 0x061zu, 0x060zu>();
+}
+
+template <system_config System, global_config Config>
+constexpr inline auto superblock <System, Config> :: get_feature_ro_compat_indices() noexcept
+requires(superblock <System, Config> :: has_feature_ro_compat())
+{
+ return std :: index_sequence<0x067zu, 0x066zu, 0x065zu, 0x064zu>();
 }
 
 template <system_config System, global_config Config>
