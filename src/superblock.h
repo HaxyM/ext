@@ -108,6 +108,7 @@ template <system_config System, global_config Config>
 enum class superblock <System, Config> :: magic_t
 {
  old_ext1,
+ old_ext2,
  ext2_and_later
 };
 
@@ -579,6 +580,8 @@ requires(superblock <System, Config> :: has_magic())
   using enum magic_t;
   case UINT16_C(0x137D):
   return std :: make_optional<magic_t>(old_ext1);
+  case UINT16_C(0xEF51):
+  return std :: make_optional<magic_t>(old_ext2);
   case UINT16_C(0xEF53):
   return std :: make_optional<magic_t>(ext2_and_later);
   default:
