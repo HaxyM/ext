@@ -78,8 +78,8 @@ enum class system_config :: feature_compat_t : std :: uint32_t
 enum class system_config :: feature_incompat_t : std :: uint32_t
 {
  empty = UINT32_C(0),
- ext2_mask = UINT32_C(0b1'1111),
- ext3_mask = UINT32_C(0b1'1111),
+ ext2_mask = UINT32_C(0b1'0011),
+ ext3_mask = UINT32_C(0b111'1111),
  ext4_mask = UINT32_C(0b11'1111'0111'1101'1111)
 };
 
@@ -88,7 +88,7 @@ enum class system_config :: feature_ro_compat_t : std :: uint32_t
  empty = UINT32_C(0),
  ext2_mask = UINT32_C(0b111),
  ext3_mask = UINT32_C(0b111),
- ext4_mask = UINT32_C(0b1'1011'0111'0111'1111)
+ ext4_mask = UINT32_C(0b1'1111'1111'1111'1111)
 };
 
 enum class system_config :: ext2_feature_compat_flags : std :: underlying_type_t<system_config :: feature_compat_t>
@@ -120,18 +120,18 @@ enum class system_config :: ext2_feature_incompat_flags : std :: underlying_type
 {
  compresion = UINT32_C(0b0'0001),
  filetype = UINT32_C(0b0'0010),
- recover = UINT32_C(0b0'0100),
- journal_dev = UINT32_C(0b0'1000),
  meta_bg = UINT32_C(0b1'0000)
 };
 
 enum class system_config :: ext3_feature_incompat_flags : std :: underlying_type_t<system_config :: feature_incompat_t>
 {
+ recover = UINT32_C(0b000'0100),
+ journal_dev = UINT32_C(0b000'1000),
+ extents = UINT32_C(0b100'0000),
 };
 
 enum class system_config :: ext4_feature_incompat_flags : std :: underlying_type_t<system_config :: feature_incompat_t>
 {
- extents = UINT32_C(0b00'0000'0000'0100'0000),
  bits64 = UINT32_C(0b00'0000'0000'1000'0000),
  mmp = UINT32_C(0b00'0000'0001'0000'0000),
  flex_bg = UINT32_C(0b00'0000'0010'0000'0000),
@@ -161,11 +161,14 @@ enum class system_config :: ext4_feature_ro_compat_flags : std :: underlying_typ
  gdt_csum = UINT32_C(0b0'0000'0000'00'0001'0000),
  dir_nlink = UINT32_C(0b0'0000'0000'0010'0000),
  extra_isize = UINT32_C(0b0'0000'0000'0100'0000),
+ has_snapshot = UINT32_C(0b0'0000'0000'1000'0000),
  quota = UINT32_C(0b0'0000'0001'0000'0000),
  big_alloc = UINT32_C(0b0'0000'0010'0000'0000),
  metadata_csum = UINT32_C(0b0'0000'0100'0000'0000),
+ replica = UINT32_C(0b0'0000'1000'0000'0000),
  readonly = UINT32_C(0b0'0001'0000'0000'0000),
  project = UINT32_C(0b0'0010'0000'0000'0000),
+ shared_blocks = UINT32_C(0b0'0100'0000'0000'0000),
  verity = UINT32_C(0b0'1000'0000'0000'0000),
  orphan_present = UINT32_C(0b1'0000'0000'0000'0000)
 };
