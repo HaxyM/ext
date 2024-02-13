@@ -544,77 +544,176 @@ template <system_config System, global_config Config> template <class Self>
 inline auto superblock <System, Config> :: get_inodes_count(this Self&& self) noexcept
 requires(superblock <System, Config> :: has_inodes_count())
 {
- return std :: forward<Self>(self).read(get_inodes_count_indices());
+ if constexpr (Config.debug)
+ {
+  const auto count = std :: forward<Self>(self).read(get_inodes_count_indices());
+  if (!count)
+  {
+   logger<Config, log_level :: error>().log("Failed to read inodes count.");
+  }
+  return count;
+ }
+ else return std :: forward<Self>(self).read(get_inodes_count_indices());
 }
 
 template <system_config System, global_config Config> template <class Self>
 inline auto superblock <System, Config> :: get_blocks_count(this Self&& self) noexcept
 requires(superblock <System, Config> :: has_blocks_count())
 {
- return std :: forward<Self>(self).read(get_blocks_count_indices());
+ if constexpr (Config.debug)
+ {
+  const auto count = std :: forward<Self>(self).read(get_blocks_count_indices());
+  if (!count)
+  {
+   logger<Config, log_level :: error>().log("Failed to read blocks count.");
+  }
+  return count;
+ }
+ else return std :: forward<Self>(self).read(get_blocks_count_indices());
 }
 
 template <system_config System, global_config Config> template <class Self>
 inline auto superblock <System, Config> :: get_reserved_blocks_count(this Self&& self) noexcept
 requires(superblock <System, Config> :: has_reserved_blocks_count())
 {
- return std :: forward<Self>(self).read(get_reserved_blocks_count_indices());
+ if constexpr (Config.debug)
+ {
+  const auto count = std :: forward<Self>(self).read(get_reserved_blocks_count_indices());
+  if (!count)
+  {
+   logger<Config, log_level :: error>().log("Failed to read reserved blocks count.");
+  }
+  return count;
+ }
+ else return std :: forward<Self>(self).read(get_reserved_blocks_count_indices());
 }
 
 template <system_config System, global_config Config> template <class Self>
 inline auto superblock <System, Config> :: get_free_blocks_count(this Self&& self) noexcept
 requires(superblock <System, Config> :: has_free_blocks_count())
 {
- return std :: forward<Self>(self).read(get_free_blocks_count_indices());
+ if constexpr (Config.debug)
+ {
+  const auto count = std :: forward<Self>(self).read(get_free_blocks_count_indices());
+  if (!count)
+  {
+   logger<Config, log_level :: error>().log("Failed to read free blocks count.");
+  }
+  return count;
+ }
+ else return std :: forward<Self>(self).read(get_free_blocks_count_indices());
 }
 
 template <system_config System, global_config Config> template <class Self>
 inline auto superblock <System, Config> :: get_free_inodes_count(this Self&& self) noexcept
 requires(superblock <System, Config> :: has_free_inodes_count())
 {
- return std :: forward<Self>(self).read(get_free_inodes_count_indices());
+ if constexpr (Config.debug)
+ {
+  const auto count = std :: forward<Self>(self).read(get_free_inodes_count_indices());
+  if (!count)
+  {
+   logger<Config, log_level :: error>().log("Failed to read free inodes count.");
+  }
+  return count;
+ }
+ else return std :: forward<Self>(self).read(get_free_inodes_count_indices());
 }
 
 template <system_config System, global_config Config> template <class Self>
 inline auto superblock <System, Config> :: get_first_data_block(this Self&& self) noexcept
 requires(superblock <System, Config> :: has_first_data_block())
 {
- return std :: forward<Self>(self).read(get_first_data_block_indices());
+ if constexpr (Config.debug)
+ {
+  const auto block = std :: forward<Self>(self).read(get_first_data_block_indices());
+  if (!block)
+  {
+   logger<Config, log_level :: error>().log("Failed to read first data block.");
+  }
+  return block;
+ }
+ else return std :: forward<Self>(self).read(get_first_data_block_indices());
 }
 
 template <system_config System, global_config Config> template <class Self>
 inline auto superblock <System, Config> :: get_log_block_size(this Self&& self) noexcept
 requires(superblock <System, Config> :: has_log_block_size())
 {
- return std :: forward<Self>(self).read(get_log_block_size_indices());
+ if constexpr (Config.debug)
+ {
+  const auto size = std :: forward<Self>(self).read(get_log_block_size_indices());
+  if (!size)
+  {
+   logger<Config, log_level :: error>().log("Failed to read log block size.");
+  }
+  return size;
+ }
+ else return std :: forward<Self>(self).read(get_log_block_size_indices());
 }
 
 template <system_config System, global_config Config> template <class Self>
 inline auto superblock <System, Config> :: get_log_cluster_size(this Self&& self) noexcept
 requires(superblock <System, Config> :: has_log_cluster_size())
 {
- return std :: forward<Self>(self).read(get_log_cluster_size_indices());
+ if constexpr (Config.debug)
+ {
+  const auto size = std :: forward<Self>(self).read(get_log_cluster_size_indices());
+  if (!size)
+  {
+   logger<Config, log_level :: error>().log("Failed to read log cluster size.");
+  }
+  return size;
+ }
+ else return std :: forward<Self>(self).read(get_log_cluster_size_indices());
 }
 
 template <system_config System, global_config Config> template <class Self>
 inline auto superblock <System, Config> :: get_blocks_per_group(this Self&& self) noexcept
 requires(superblock <System, Config> :: has_blocks_per_group())
 {
- return std :: forward<Self>(self).read(get_blocks_per_group_indices());
+ if constexpr (Config.debug)
+ {
+  const auto blocks = std :: forward<Self>(self).read(get_blocks_per_group_indices());
+  if (!blocks)
+  {
+   logger<Config, log_level :: error>().log("Failed to read blocks per group.");
+  }
+  return blocks;
+ }
+ else return std :: forward<Self>(self).read(get_blocks_per_group_indices());
 }
 
 template <system_config System, global_config Config> template <class Self>
 inline auto superblock <System, Config> :: get_clusters_per_group(this Self&& self) noexcept
 requires(superblock <System, Config> :: has_clusters_per_group())
 {
- return std :: forward<Self>(self).read(get_clusters_per_group_indices());
+ if constexpr (Config.debug)
+ {
+  const auto clusters = std :: forward<Self>(self).read(get_clusters_per_group_indices());
+  if (!clusters)
+  {
+   logger<Config, log_level :: error>().log("Failed to read clusters per group.");
+  }
+  return clusters;
+ }
+ else return std :: forward<Self>(self).read(get_clusters_per_group_indices());
 }
 
 template <system_config System, global_config Config> template <class Self>
 inline auto superblock <System, Config> :: get_inodes_per_group(this Self&& self) noexcept
 requires(superblock <System, Config> :: has_inodes_per_group())
 {
- return std :: forward<Self>(self).read(get_inodes_per_group_indices());
+ if constexpr (Config.debug)
+ {
+  const auto inodes = std :: forward<Self>(self).read(get_inodes_per_group_indices());
+  if (!inodes)
+  {
+   logger<Config, log_level :: error>().log("Failed to read inodes per group.");
+  }
+  return inodes;
+ }
+ else return std :: forward<Self>(self).read(get_inodes_per_group_indices());
 }
 
 template <system_config System, global_config Config> template <class Self>
@@ -737,14 +836,32 @@ template <system_config System, global_config Config> template <class Self>
 inline auto superblock <System, Config> :: get_first_inode(this Self&& self) noexcept
 requires(superblock <System, Config> :: has_first_inode())
 {
- return std :: forward<Self>(self).read(get_first_inode_indices());
+ if constexpr (Config.debug)
+ {
+  const auto inode = std :: forward<Self>(self).read(get_first_inode_indices());
+  if (!inode)
+  {
+   logger<Config, log_level :: error>().log("Failed to read first inode.");
+  }
+  return inode;
+ }
+ else return std :: forward<Self>(self).read(get_first_inode_indices());
 }
 
 template <system_config System, global_config Config> template <class Self>
 inline auto superblock <System, Config> :: get_inode_size(this Self&& self) noexcept
 requires(superblock <System, Config> :: has_inode_size())
 {
- return std :: forward<Self>(self).read(get_inode_size_indices());
+ if constexpr (Config.debug)
+ {
+  const auto size = std :: forward<Self>(self).read(get_inode_size_indices());
+  if (!size)
+  {
+   logger<Config, log_level :: error>().log("Failed to read inode size.");
+  }
+  return size;
+ }
+ else return std :: forward<Self>(self).read(get_inode_size_indices());
 }
 
 template <system_config System, global_config Config> template <class Self>
@@ -811,7 +928,16 @@ template <system_config System, global_config Config> template <class Self>
 inline auto superblock <System, Config> :: get_first_error_inode(this Self&& self) noexcept
 requires(superblock <System, Config> :: has_first_error_inode())
 {
- return std :: forward<Self>(self).read(get_first_error_inode_indices());
+ if constexpr (Config.debug)
+ {
+  const auto inode = std :: forward<Self>(self).read(get_first_error_inode_indices());
+  if (!inode)
+  {
+   logger<Config, log_level :: error>().log("Failed to read first inode with error.");
+  }
+  return inode;
+ }
+ else return std :: forward<Self>(self).read(get_first_error_inode_indices());
 }
 
 template <system_config System, global_config Config> template <class Self>
@@ -830,14 +956,32 @@ template <system_config System, global_config Config> template <class Self>
 inline auto superblock <System, Config> :: get_last_error_inode(this Self&& self) noexcept
 requires(superblock <System, Config> :: has_last_error_inode())
 {
- return std :: forward<Self>(self).read(get_last_error_inode_indices());
+ if constexpr (Config.debug)
+ {
+  const auto inode = std :: forward<Self>(self).read(get_last_error_inode_indices());
+  if (!inode)
+  {
+   logger<Config, log_level :: error>().log("Failed to read last inode with error.");
+  }
+  return inode;
+ }
+ else return std :: forward<Self>(self).read(get_last_error_inode_indices());
 }
 
 template <system_config System, global_config Config> template <class Self>
 inline auto superblock <System, Config> :: get_lpf_ino(this Self&& self) noexcept
 requires(superblock <System, Config> :: has_lpf_ino())
 {
- return std :: forward<Self>(self).read(get_lpf_ino_indices());
+ if constexpr (Config.debug)
+ {
+  const auto inode = std :: forward<Self>(self).read(get_lpf_ino_indices());
+  if (!inode)
+  {
+   logger<Config, log_level :: error>().log("Failed to read \"lost + found\" inode.");
+  }
+  return inode;
+ }
+ else return std :: forward<Self>(self).read(get_lpf_ino_indices());
 }
 
 template <system_config System, global_config Config>
