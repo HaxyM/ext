@@ -44,6 +44,7 @@ template <system_config System, global_config Config> class superblock
  constexpr static bool has_last_error_time() noexcept;
  constexpr static bool has_last_error_inode() noexcept;
  constexpr static bool has_lpf_ino() noexcept;
+ constexpr static bool is_64bit() noexcept;
  //Subtypes
  enum class magic_t;
  using time_point_t = std :: chrono :: time_point<std :: chrono :: file_clock>;
@@ -540,6 +541,21 @@ constexpr inline bool superblock <System, Config> :: has_lpf_ino() noexcept
  }
 }
 
+template <system_config System, global_config Config>
+constexpr inline bool superblock <System, Config> :: is_64bit() noexcept
+{
+ switch (System.file_system)
+ {
+  using enum system_config :: file_system_t;
+  case ext:
+  case ext2:
+  case ext3:
+  return false;
+  case ext4:
+  return is_flag_set<System, system_config :: feature_incompat_flags <ext4> :: bits64>();
+ }
+}
+
 template <system_config System, global_config Config> template <class Self>
 inline auto superblock <System, Config> :: get_inodes_count(this Self&& self) noexcept
 requires(superblock <System, Config> :: has_inodes_count())
@@ -1023,8 +1039,7 @@ template <system_config System, global_config Config>
 constexpr inline auto superblock <System, Config> :: get_blocks_count_indices() noexcept
 requires(superblock <System, Config> :: has_blocks_count())
 {
- using enum system_config :: file_system_t;
- if constexpr ((System.file_system == ext4) && is_flag_set<System, system_config :: feature_incompat_flags <ext4> :: bits64>())
+ if constexpr (is_64bit())
  {
   return std :: index_sequence<0x153zu, 0x152zu, 0x151zu, 0x150zu, 0x007zu, 0x006zu, 0x005zu, 0x004zu>();
  }
@@ -1038,8 +1053,7 @@ template <system_config System, global_config Config>
 constexpr inline auto superblock <System, Config> :: get_reserved_blocks_count_indices() noexcept
 requires(superblock <System, Config> :: has_reserved_blocks_count())
 {
- using enum system_config :: file_system_t;
- if constexpr ((System.file_system == ext4) && is_flag_set<System, system_config :: feature_incompat_flags <ext4> :: bits64>())
+ if constexpr (is_64bit())
  {
   return std :: index_sequence<0x157zu, 0x156zu, 0x155zu, 0x154zu, 0x00Bzu, 0x00Azu, 0x009zu, 0x008zu>();
  }
@@ -1054,7 +1068,7 @@ constexpr inline auto superblock <System, Config> :: get_free_blocks_count_indic
 requires(superblock <System, Config> :: has_free_blocks_count())
 {
  using enum system_config :: file_system_t;
- if constexpr ((System.file_system == ext4) && is_flag_set<System, system_config :: feature_incompat_flags <ext4> :: bits64>())
+ if constexpr (is_64bit())
  {
   return std :: index_sequence<0x15Bzu, 0x15Azu, 0x159zu, 0x158zu, 0x00Fzu, 0x00Ezu, 0x00Dzu, 0x00Czu>();
  }
