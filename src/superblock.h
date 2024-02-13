@@ -38,6 +38,8 @@ template <system_config System, global_config Config> class superblock
  constexpr static bool has_feature_compat() noexcept;
  constexpr static bool has_feature_incompat() noexcept;
  constexpr static bool has_feature_ro_compat() noexcept;
+ constexpr static bool has_prealloc_blocks() noexcept;
+ constexpr static bool has_prealloc_dir_blocks() noexcept;
  constexpr static bool has_mkfs_time() noexcept;
  constexpr static bool has_first_error_time() noexcept;
  constexpr static bool has_first_error_inode() noexcept;
@@ -45,6 +47,7 @@ template <system_config System, global_config Config> class superblock
  constexpr static bool has_last_error_inode() noexcept;
  constexpr static bool has_lpf_ino() noexcept;
  constexpr static bool is_64bit() noexcept;
+ constexpr static bool is_having_block_preallocation() noexcept;
  //Subtypes
  enum class magic_t;
  using time_point_t = std :: chrono :: time_point<std :: chrono :: file_clock>;
@@ -71,6 +74,8 @@ template <system_config System, global_config Config> class superblock
  template <class Self> auto get_feature_compat(this Self&& self) noexcept requires(has_feature_compat());
  template <class Self> auto get_feature_incompat(this Self&& self) noexcept requires(has_feature_incompat());
  template <class Self> auto get_feature_ro_compat(this Self&& self) noexcept requires(has_feature_ro_compat());
+ template <class Self> auto get_prealloc_blocks(this Self&& self) noexcept requires(has_prealloc_blocks());
+ template <class Self> auto get_prealloc_dir_blocks(this Self&& self) noexcept requires(has_prealloc_dir_blocks());
  template <class Self> auto get_mkfs_time(this Self&& self) noexcept requires(has_mkfs_time());
  template <class Self> auto get_first_error_time(this Self&& self) noexcept requires(has_first_error_time());
  template <class Self> auto get_first_error_inode(this Self&& self) noexcept requires(has_first_error_inode());
@@ -104,6 +109,8 @@ template <system_config System, global_config Config> class superblock
  constexpr static auto get_feature_compat_indices() noexcept requires(has_feature_compat());
  constexpr static auto get_feature_incompat_indices() noexcept requires(has_feature_incompat());
  constexpr static auto get_feature_ro_compat_indices() noexcept requires(has_feature_ro_compat());
+ constexpr static auto get_prealloc_blocks_indices() noexcept requires(has_prealloc_blocks());
+ constexpr static auto get_prealloc_dir_blocks_indices() noexcept requires(has_prealloc_dir_blocks());
  constexpr static auto get_inode_size_indices() noexcept requires(has_inode_size());
  constexpr static auto get_mkfs_time_indices() noexcept requires(has_mkfs_time());
  constexpr static auto get_first_error_time_indices() noexcept requires(has_first_error_time());
@@ -452,6 +459,18 @@ constexpr inline bool superblock <System, Config> :: has_feature_ro_compat() noe
 }
 
 template <system_config System, global_config Config>
+constexpr inline bool superblock <System, Config> :: has_prealloc_blocks() noexcept
+{
+ return is_having_block_preallocation();
+}
+
+template <system_config System, global_config Config>
+constexpr inline bool superblock <System, Config> :: has_prealloc_dir_blocks() noexcept
+{
+ return is_having_block_preallocation();
+}
+
+template <system_config System, global_config Config>
 constexpr inline bool superblock <System, Config> :: has_mkfs_time() noexcept
 {
  switch (System.file_system)
@@ -553,6 +572,23 @@ constexpr inline bool superblock <System, Config> :: is_64bit() noexcept
   return false;
   case ext4:
   return is_flag_set<System, system_config :: feature_incompat_flags <ext4> :: bits64>();
+ }
+}
+
+template <system_config System, global_config Config>
+constexpr inline bool superblock <System, Config> :: is_having_block_preallocation() noexcept
+{
+ switch (System.file_system)
+ {
+  using enum system_config :: file_system_t;
+  case ext:
+  return false;
+  case ext2:
+  return is_flag_set<System, system_config :: feature_compat_flags <ext2> :: dir_prealloc>();
+  case ext3:
+  return is_flag_set<System, system_config :: feature_compat_flags <ext3> :: dir_prealloc>();
+  case ext4:
+  return is_flag_set<System, system_config :: feature_compat_flags <ext4> :: dir_prealloc>();
  }
 }
 
@@ -917,6 +953,38 @@ requires(superblock <System, Config> :: has_feature_ro_compat())
 }
 
 template <system_config System, global_config Config> template <class Self>
+inline auto superblock <System, Config> :: get_prealloc_blocks(this Self&& self) noexcept
+requires(superblock <System, Config> :: has_prealloc_blocks())
+{
+ if constexpr (Config.debug)
+ {
+  const auto count = std :: forward<Self>(self).read(get_prealloc_blocks_indices());
+  if (!count)
+  {
+   logger<Config, log_level :: error>().log("Failed to read number of blocks to try to preallocate.");
+  }
+  return count;
+ }
+ else return std :: forward<Self>(self).read(get_prealloc_blocks_indices());
+}
+
+template <system_config System, global_config Config> template <class Self>
+inline auto superblock <System, Config> :: get_prealloc_dir_blocks(this Self&& self) noexcept
+requires(superblock <System, Config> :: has_prealloc_dir_blocks())
+{
+ if constexpr (Config.debug)
+ {
+  const auto count = std :: forward<Self>(self).read(get_prealloc_dir_blocks_indices());
+  if (!count)
+  {
+   logger<Config, log_level :: error>().log("Failed to read number of blocks to preallocate for blocks.");
+  }
+  return count;
+ }
+ else return std :: forward<Self>(self).read(get_prealloc_dir_blocks_indices());
+}
+
+template <system_config System, global_config Config> template <class Self>
 inline auto superblock <System, Config> :: get_mkfs_time(this Self&& self) noexcept
 requires(superblock <System, Config> :: has_mkfs_time())
 {
@@ -1213,6 +1281,20 @@ constexpr inline auto superblock <System, Config> :: get_feature_ro_compat_indic
 requires(superblock <System, Config> :: has_feature_ro_compat())
 {
  return std :: index_sequence<0x067zu, 0x066zu, 0x065zu, 0x064zu>();
+}
+
+template <system_config System, global_config Config>
+constexpr inline auto superblock <System, Config> :: get_prealloc_blocks_indices() noexcept
+requires(superblock <System, Config> :: has_prealloc_blocks())
+{
+ return std :: index_sequence<0x0CCzu>();
+}
+
+template <system_config System, global_config Config>
+constexpr inline auto superblock <System, Config> :: get_prealloc_dir_blocks_indices() noexcept
+requires(superblock <System, Config> :: has_prealloc_dir_blocks())
+{
+ return std :: index_sequence<0x0CDzu>();
 }
 
 template <system_config System, global_config Config>
