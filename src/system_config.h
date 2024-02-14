@@ -12,16 +12,19 @@ struct system_config
  enum class feature_compat_t : std :: uint32_t;
  enum class feature_incompat_t : std :: uint32_t;
  enum class feature_ro_compat_t : std :: uint32_t;
+ enum class compression_algorithm_t : std :: uint32_t;
  file_system_t file_system;
  creator_os_t creator_os;
  revision_t revision;
  feature_compat_t feature_compat;
  feature_incompat_t feature_incompat;
  feature_ro_compat_t feature_ro_compat;
+ compression_algorithm_t compression_algorithm;
  bool feature_compat_64bit;
  template <file_system_t> struct feature_compat_flags;
  template <file_system_t> struct feature_incompat_flags;
  template <file_system_t> struct feature_ro_compat_flags;
+ enum class compression_algorithm_flags : std :: underlying_type_t<compression_algorithm_t>;
  constexpr static system_config getDefault() noexcept;
  private:
  enum class ext2_feature_compat_flags : std :: underlying_type_t<feature_compat_t>;
@@ -42,6 +45,7 @@ struct system_config
  template <auto System, system_config :: ext2_feature_ro_compat_flags Flag> friend constexpr bool is_flag_set() noexcept;
  template <auto System, system_config :: ext3_feature_ro_compat_flags Flag> friend constexpr bool is_flag_set() noexcept;
  template <auto System, system_config :: ext4_feature_ro_compat_flags Flag> friend constexpr bool is_flag_set() noexcept;
+ template <auto System, system_config :: compression_algorithm_flags Flag> friend constexpr bool is_flag_set() noexcept;
 };
 
 enum class system_config :: file_system_t
@@ -89,6 +93,12 @@ enum class system_config :: feature_ro_compat_t : std :: uint32_t
  ext2_mask = UINT32_C(0b111),
  ext3_mask = UINT32_C(0b111),
  ext4_mask = UINT32_C(0b1'1111'1111'1111'1111)
+};
+
+enum class system_config :: compression_algorithm_t : std :: uint32_t
+{
+ empty = UINT32_C(0),
+ mask = UINT32_C(0b1'1111)
 };
 
 enum class system_config :: ext2_feature_compat_flags : std :: underlying_type_t<system_config :: feature_compat_t>
@@ -227,6 +237,15 @@ template <> struct system_config :: feature_ro_compat_flags<system_config :: fil
  using enum system_config :: ext4_feature_ro_compat_flags;
 };
 
+enum class system_config :: compression_algorithm_flags : std :: underlying_type_t<system_config :: compression_algorithm_t>
+{
+ LZV1 = UINT32_C(0b0'0001),
+ LZRW3A = UINT32_C(0b0'0010),
+ GZIP = UINT32_C(0b0'0100),
+ BZIP2 = UINT32_C(0b0'1000),
+ LZO = UINT32_C(0b1'0000)
+};
+
 constexpr inline system_config system_config :: getDefault() noexcept
 {
  return
@@ -237,6 +256,7 @@ constexpr inline system_config system_config :: getDefault() noexcept
   .feature_compat = feature_compat_t :: empty,
   .feature_incompat = feature_incompat_t :: empty,
   .feature_ro_compat = feature_ro_compat_t :: empty,
+  .compression_algorithm = compression_algorithm_t :: empty,
   .feature_compat_64bit = false
  };
 }
@@ -293,4 +313,10 @@ template <auto System, system_config :: ext4_feature_ro_compat_flags Flag> const
 {
  constexpr const static auto res = std :: to_underlying(System.feature_ro_compat) & ~std :: to_underlying(Flag);
  return static_cast<system_config :: feature_ro_compat_t>(res) != system_config :: feature_ro_compat_t :: empty;
+}
+
+template <auto System, system_config :: compression_algorithm_flags Flag> constexpr bool is_flag_set() noexcept
+{
+ constexpr const static auto res = std :: to_underlying(System.compression_algorithm) & ~std :: to_underlying(Flag);
+ return static_cast<system_config :: compression_algorithm_t>(res) != system_config :: compression_algorithm_t :: empty;
 }
