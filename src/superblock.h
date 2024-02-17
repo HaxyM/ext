@@ -81,6 +81,8 @@ template <system_config System, global_config Config> class superblock
  template <class Self> auto get_last_error_time(this Self&& self) noexcept requires(has_last_error_time());
  template <class Self> auto get_last_error_inode(this Self&& self) noexcept requires(has_last_error_inode());
  template <class Self> auto get_lpf_ino(this Self&& self) noexcept requires(has_lpf_ino());
+ //Flag getters
+ template <class Self> auto get_is_64bit(this Self&& self) noexcept requires(has_feature_incompat());
  //Universal
  constexpr static std :: size_t get_block_size() noexcept;
  template <class Self> auto&& get_block(this Self&& self) noexcept;
@@ -1033,6 +1035,24 @@ requires(superblock <System, Config> :: has_lpf_ino())
   return inode;
  }
  else return std :: forward<Self>(self).read(get_lpf_ino_indices());
+}
+
+template <system_config System, global_config Config> template <class Self>
+inline auto superblock <System, Config> :: get_is_64bit(this Self&& self) noexcept
+requires(superblock <System, Config> :: has_feature_incompat())
+{
+ if (const auto flags = std :: forward<Self>(self).get_feature_incompat(); !flags)
+ {
+  logger<Config, log_level :: error>().log("Failed to get feature incompat flags.");
+  return static_cast<std :: optional<bool> >(std :: nullopt);
+ }
+ else
+ {
+  using enum system_config :: file_system_t;
+  constexpr const static auto flag = std :: to_underlying(system_config :: feature_incompat_flags <ext4> :: bits64);
+  const auto res = static_cast<system_config :: feature_incompat_t>(std :: to_underlying(*flags) & (~flag));
+  return std :: make_optional(res != system_config :: feature_incompat_t :: empty);
+ }
 }
 
 template <system_config System, global_config Config>
