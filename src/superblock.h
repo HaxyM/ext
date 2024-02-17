@@ -5,6 +5,7 @@
 #include "global_config.h"
 #include "logger.h"
 #include "system_config.h"
+#include "system_query.h"
 
 #include <chrono>
 #include <cstdint>
@@ -46,8 +47,6 @@ template <system_config System, global_config Config> class superblock
  constexpr static bool has_last_error_time() noexcept;
  constexpr static bool has_last_error_inode() noexcept;
  constexpr static bool has_lpf_ino() noexcept;
- constexpr static bool is_64bit() noexcept;
- constexpr static bool is_having_block_preallocation() noexcept;
  //Subtypes
  enum class magic_t;
  using time_point_t = std :: chrono :: time_point<std :: chrono :: file_clock>;
@@ -461,13 +460,13 @@ constexpr inline bool superblock <System, Config> :: has_feature_ro_compat() noe
 template <system_config System, global_config Config>
 constexpr inline bool superblock <System, Config> :: has_prealloc_blocks() noexcept
 {
- return is_having_block_preallocation();
+ return system_query <System> :: is_having_block_preallocation();
 }
 
 template <system_config System, global_config Config>
 constexpr inline bool superblock <System, Config> :: has_prealloc_dir_blocks() noexcept
 {
- return is_having_block_preallocation();
+ return system_query <System> :: is_having_block_preallocation();
 }
 
 template <system_config System, global_config Config>
@@ -557,38 +556,6 @@ constexpr inline bool superblock <System, Config> :: has_lpf_ino() noexcept
   return false;
   case ext4:
   return true;
- }
-}
-
-template <system_config System, global_config Config>
-constexpr inline bool superblock <System, Config> :: is_64bit() noexcept
-{
- switch (System.file_system)
- {
-  using enum system_config :: file_system_t;
-  case ext:
-  case ext2:
-  case ext3:
-  return false;
-  case ext4:
-  return is_flag_set<System, system_config :: feature_incompat_flags <ext4> :: bits64>();
- }
-}
-
-template <system_config System, global_config Config>
-constexpr inline bool superblock <System, Config> :: is_having_block_preallocation() noexcept
-{
- switch (System.file_system)
- {
-  using enum system_config :: file_system_t;
-  case ext:
-  return false;
-  case ext2:
-  return is_flag_set<System, system_config :: feature_compat_flags <ext2> :: dir_prealloc>();
-  case ext3:
-  return is_flag_set<System, system_config :: feature_compat_flags <ext3> :: dir_prealloc>();
-  case ext4:
-  return is_flag_set<System, system_config :: feature_compat_flags <ext4> :: dir_prealloc>();
  }
 }
 
@@ -1107,7 +1074,7 @@ template <system_config System, global_config Config>
 constexpr inline auto superblock <System, Config> :: get_blocks_count_indices() noexcept
 requires(superblock <System, Config> :: has_blocks_count())
 {
- if constexpr (is_64bit())
+ if constexpr (system_query <System> :: is_64bit())
  {
   return std :: index_sequence<0x153zu, 0x152zu, 0x151zu, 0x150zu, 0x007zu, 0x006zu, 0x005zu, 0x004zu>();
  }
@@ -1121,7 +1088,7 @@ template <system_config System, global_config Config>
 constexpr inline auto superblock <System, Config> :: get_reserved_blocks_count_indices() noexcept
 requires(superblock <System, Config> :: has_reserved_blocks_count())
 {
- if constexpr (is_64bit())
+ if constexpr (system_query <System> :: is_64bit())
  {
   return std :: index_sequence<0x157zu, 0x156zu, 0x155zu, 0x154zu, 0x00Bzu, 0x00Azu, 0x009zu, 0x008zu>();
  }
@@ -1136,7 +1103,7 @@ constexpr inline auto superblock <System, Config> :: get_free_blocks_count_indic
 requires(superblock <System, Config> :: has_free_blocks_count())
 {
  using enum system_config :: file_system_t;
- if constexpr (is_64bit())
+ if constexpr (system_query <System> :: is_64bit())
  {
   return std :: index_sequence<0x15Bzu, 0x15Azu, 0x159zu, 0x158zu, 0x00Fzu, 0x00Ezu, 0x00Dzu, 0x00Czu>();
  }
