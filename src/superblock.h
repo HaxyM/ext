@@ -10,6 +10,7 @@
 #include <chrono>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <type_traits>
 #include <utility>
 
@@ -894,7 +895,7 @@ requires(superblock <System, Config> :: has_feature_compat())
   logger<Config, log_level :: error>().log("Failed to read feature compat.");
   return static_cast<std :: optional<system_config :: feature_compat_t> >(std :: nullopt);
  }
- else return std :: make_optional<system_config :: feature_compat_t>(*feature);
+ else return std :: make_optional(static_cast<system_config :: feature_compat_t>(*feature));
 }
 
 template <system_config System, global_config Config> template <class Self>
@@ -906,7 +907,7 @@ requires(superblock <System, Config> :: has_feature_incompat())
   logger<Config, log_level :: error>().log("Failed to read feature incompat.");
   return static_cast<std :: optional<system_config :: feature_incompat_t> >(std :: nullopt);
  }
- else return std :: make_optional<system_config :: feature_incompat_t>(*feature);
+ else return std :: make_optional(static_cast<system_config :: feature_incompat_t>(*feature));
 }
 
 template <system_config System, global_config Config> template <class Self>
@@ -918,7 +919,7 @@ requires(superblock <System, Config> :: has_feature_ro_compat())
   logger<Config, log_level :: error>().log("Failed to read feature read-only compat.");
   return static_cast<std :: optional<system_config :: feature_ro_compat_t> >(std :: nullopt);
  }
- else return std :: make_optional<system_config :: feature_ro_compat_t>(*feature);
+ else return std :: make_optional(static_cast<system_config :: feature_ro_compat_t>(*feature));
 }
 
 template <system_config System, global_config Config> template <class Self>
