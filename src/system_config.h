@@ -20,7 +20,6 @@ struct system_config
  feature_incompat_t feature_incompat;
  feature_ro_compat_t feature_ro_compat;
  compression_algorithm_t compression_algorithm;
- bool feature_compat_64bit;
  template <file_system_t> struct feature_compat_flags;
  template <file_system_t> struct feature_incompat_flags;
  template <file_system_t> struct feature_ro_compat_flags;
@@ -250,14 +249,13 @@ constexpr inline system_config system_config :: getDefault() noexcept
 {
  return
  {
-  .file_system = file_system_t :: ext,
+  .file_system = file_system_t :: ext4,
   .creator_os = creator_os_t :: linux,
-  .revision = revision_t :: good_old_rev,
+  .revision = revision_t :: dynamic_rev,
   .feature_compat = feature_compat_t :: empty,
   .feature_incompat = feature_incompat_t :: empty,
   .feature_ro_compat = feature_ro_compat_t :: empty,
-  .compression_algorithm = compression_algorithm_t :: empty,
-  .feature_compat_64bit = false
+  .compression_algorithm = compression_algorithm_t :: empty
  };
 }
 
