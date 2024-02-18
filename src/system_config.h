@@ -73,8 +73,8 @@ enum class system_config :: revision_t
 enum class system_config :: feature_compat_t : std :: uint32_t
 {
  empty = UINT32_C(0),
- ext2_mask = UINT32_C(0b11'1111),
- ext3_mask = UINT32_C(0b11'1111'1111),
+ ext2_mask = UINT32_C(0b1'1111'1011),
+ ext3_mask = UINT32_C(0b1'1111'1111),
  ext4_mask = UINT32_C(0b1'1111'1111'1111)
 };
 
@@ -102,24 +102,24 @@ enum class system_config :: compression_algorithm_t : std :: uint32_t
 
 enum class system_config :: ext2_feature_compat_flags : std :: underlying_type_t<system_config :: feature_compat_t>
 {
- dir_prealloc = UINT32_C(0b00'0001),
- imagic_inodes = UINT32_C(0b00'0010),
- has_journal = UINT32_C(0b00'0100), //Marks at least ext3.
- ext_attr = UINT32_C(0b00'1000),
- resize_inode = UINT32_C(0b01'0000),
- dir_index = UINT32_C(0b10'0000)
+ dir_prealloc = UINT32_C(0b0'0000'0001),
+ imagic_inodes = UINT32_C(0b0'0000'0010),
+ ext_attr = UINT32_C(0b0'0000'1000),
+ resize_inode = UINT32_C(0b0'0001'0000),
+ dir_index = UINT32_C(0b0'0010'0000),
+ lazy_bg = UINT32_C(0b0'0100'0000),
+ exclude_inode = UINT32_C(0b0'1000'0000),
+ exclude_bitmap = UINT32_C(0b1'0000'0000),
 };
 
 enum class system_config :: ext3_feature_compat_flags : std :: underlying_type_t<system_config :: feature_compat_t>
 {
- lazy_bg = UINT32_C(0b00'0100'0000),
- exclude_inode = UINT32_C(0b00'1000'0000),
- exclude_bitmap = UINT32_C(0b01'0000'0000),
- sparse_super = UINT32_C(0b10'0000'0000)
+ has_journal = UINT32_C(0b100),
 };
 
 enum class system_config :: ext4_feature_compat_flags : std :: underlying_type_t<system_config :: feature_compat_t>
 {
+ sparse_super = UINT32_C(0b0'0010'0000'0000),
  fast_commit = UINT32_C(0b0'0100'0000'0000),
  stable_inodes = UINT32_C(0b0'1000'0000'0000),
  orphan_file = UINT32_C(0b1'0000'0000'0000)
