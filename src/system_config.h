@@ -13,6 +13,8 @@ struct system_config
  enum class feature_incompat_t : std :: uint32_t;
  enum class feature_ro_compat_t : std :: uint32_t;
  enum class compression_algorithm_t : std :: uint32_t;
+ enum class encoding_t;
+ enum class encoding_params_t : std :: uint16_t;
  file_system_t file_system;
  creator_os_t creator_os;
  revision_t revision;
@@ -20,10 +22,13 @@ struct system_config
  feature_incompat_t feature_incompat;
  feature_ro_compat_t feature_ro_compat;
  compression_algorithm_t compression_algorithm;
+ encoding_t encoding;
+ encoding_params_t encoding_params;
  template <file_system_t> struct feature_compat_flags;
  template <file_system_t> struct feature_incompat_flags;
  template <file_system_t> struct feature_ro_compat_flags;
  enum class compression_algorithm_flags : std :: underlying_type_t<compression_algorithm_t>;
+ template <encoding_t> struct encoding_params_flags;
  constexpr static system_config getDefault() noexcept;
  private:
  enum class ext2_feature_compat_flags : std :: underlying_type_t<feature_compat_t>;
@@ -35,6 +40,8 @@ struct system_config
  enum class ext2_feature_ro_compat_flags : std :: underlying_type_t<feature_ro_compat_t>;
  enum class ext3_feature_ro_compat_flags : std :: underlying_type_t<feature_ro_compat_t>;
  enum class ext4_feature_ro_compat_flags : std :: underlying_type_t<feature_ro_compat_t>;
+ enum class ascii_encoding_params_flags : std :: underlying_type_t<encoding_params_t>;
+ enum class utf8_12_1_encoding_params_flags : std :: underlying_type_t<encoding_params_t>;
  template <auto System, system_config :: ext2_feature_compat_flags Flag> friend constexpr bool is_flag_set() noexcept;
  template <auto System, system_config :: ext3_feature_compat_flags Flag> friend constexpr bool is_flag_set() noexcept;
  template <auto System, system_config :: ext4_feature_compat_flags Flag> friend constexpr bool is_flag_set() noexcept;
@@ -45,6 +52,8 @@ struct system_config
  template <auto System, system_config :: ext3_feature_ro_compat_flags Flag> friend constexpr bool is_flag_set() noexcept;
  template <auto System, system_config :: ext4_feature_ro_compat_flags Flag> friend constexpr bool is_flag_set() noexcept;
  template <auto System, system_config :: compression_algorithm_flags Flag> friend constexpr bool is_flag_set() noexcept;
+ template <auto System, system_config :: ascii_encoding_params_flags Flag> friend constexpr bool is_flag_set() noexcept;
+ template <auto System, system_config :: utf8_12_1_encoding_params_flags Flag> friend constexpr bool is_flag_set() noexcept;
 };
 
 enum class system_config :: file_system_t
@@ -98,6 +107,19 @@ enum class system_config :: compression_algorithm_t : std :: uint32_t
 {
  empty = UINT32_C(0),
  mask = UINT32_C(0b1'1111)
+};
+
+enum class system_config :: encoding_t
+{
+ ascii,
+ utf8_12_1
+};
+
+enum class system_config :: encoding_params_t : std :: uint16_t
+{
+ empty = UINT16_C(0),
+ ascii_mask = UINT16_C(0b0),
+ utf8_12_1_mask = UINT16_C(0b1)
 };
 
 enum class system_config :: ext2_feature_compat_flags : std :: underlying_type_t<system_config :: feature_compat_t>
@@ -182,6 +204,15 @@ enum class system_config :: ext4_feature_ro_compat_flags : std :: underlying_typ
  orphan_present = UINT32_C(0b1'0000'0000'0000'0000)
 };
 
+enum class system_config :: ascii_encoding_params_flags : std :: underlying_type_t<system_config :: encoding_params_t>
+{
+};
+
+enum class system_config :: utf8_12_1_encoding_params_flags : std :: underlying_type_t<system_config :: encoding_params_t>
+{
+ strict = UINT16_C(0b1)
+};
+
 template <> struct system_config :: feature_compat_flags<system_config :: file_system_t :: ext2>
 {
  using enum system_config :: ext2_feature_compat_flags;
@@ -236,6 +267,16 @@ template <> struct system_config :: feature_ro_compat_flags<system_config :: fil
  using enum system_config :: ext4_feature_ro_compat_flags;
 };
 
+template <> struct system_config :: encoding_params_flags<system_config :: encoding_t :: ascii>
+{
+ using enum system_config :: ascii_encoding_params_flags;
+};
+
+template <> struct system_config :: encoding_params_flags<system_config :: encoding_t :: utf8_12_1>
+{
+ using enum system_config :: utf8_12_1_encoding_params_flags;
+};
+
 enum class system_config :: compression_algorithm_flags : std :: underlying_type_t<system_config :: compression_algorithm_t>
 {
  LZV1 = UINT32_C(0b0'0001),
@@ -255,7 +296,9 @@ constexpr inline system_config system_config :: getDefault() noexcept
   .feature_compat = feature_compat_t :: empty,
   .feature_incompat = feature_incompat_t :: empty,
   .feature_ro_compat = feature_ro_compat_t :: empty,
-  .compression_algorithm = compression_algorithm_t :: empty
+  .compression_algorithm = compression_algorithm_t :: empty,
+  .encoding = encoding_t :: ascii,
+  .encoding_params = encoding_params_t :: empty
  };
 }
 
@@ -317,4 +360,18 @@ template <auto System, system_config :: compression_algorithm_flags Flag> conste
 {
  constexpr const static auto res = std :: to_underlying(System.compression_algorithm) & ~std :: to_underlying(Flag);
  return static_cast<system_config :: compression_algorithm_t>(res) != system_config :: compression_algorithm_t :: empty;
+}
+
+template <auto System, system_config :: ascii_encoding_params_flags Flag> constexpr bool is_flag_set() noexcept
+{
+ static_assert(System.encoding == system_config :: encoding_t :: ascii, "Ascii encodnig params requires ascii encoding");
+ constexpr const static auto res = std :: to_underlying(System.encoding_params) & ~std :: to_underlying(Flag);
+ return static_cast<system_config :: encoding_params_t>(res) != system_config :: encoding_params_t :: empty;
+}
+
+template <auto System, system_config :: utf8_12_1_encoding_params_flags Flag> constexpr bool is_flag_set() noexcept
+{
+ static_assert(System.encoding == system_config :: encoding_t :: utf8_12_1, "Utf8 12.1 encodnig params requires utf8 12.1 encoding");
+ constexpr const static auto res = std :: to_underlying(System.encoding_params) & ~std :: to_underlying(Flag);
+ return static_cast<system_config :: encoding_params_t>(res) != system_config :: encoding_params_t :: empty;
 }
