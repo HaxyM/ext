@@ -48,6 +48,8 @@ template <system_config System, global_config Config> class superblock
  constexpr static bool has_last_error_time() noexcept;
  constexpr static bool has_last_error_inode() noexcept;
  constexpr static bool has_lpf_ino() noexcept;
+ constexpr static bool has_encoding() noexcept;
+ constexpr static bool has_encoding_params() noexcept;
  //Subtypes
  enum class magic_t;
  using time_point_t = std :: chrono :: time_point<std :: chrono :: file_clock>;
@@ -82,8 +84,11 @@ template <system_config System, global_config Config> class superblock
  template <class Self> auto get_last_error_time(this Self&& self) noexcept requires(has_last_error_time());
  template <class Self> auto get_last_error_inode(this Self&& self) noexcept requires(has_last_error_inode());
  template <class Self> auto get_lpf_ino(this Self&& self) noexcept requires(has_lpf_ino());
+ template <class Self> auto get_encoding(this Self&& self) noexcept requires(has_encoding());
+ template <class Self> auto get_encoding_params(this Self&& self) noexcept requires(has_encoding_params());
  //Flag getters
  template <class Self> auto get_is_64bit(this Self&& self) noexcept requires(has_feature_incompat());
+ template <class Self> auto get_casefold(this Self&& self) noexcept requires(has_feature_incompat());
  //Universal
  constexpr static std :: size_t get_block_size() noexcept;
  template <class Self> auto&& get_block(this Self&& self) noexcept;
@@ -120,6 +125,8 @@ template <system_config System, global_config Config> class superblock
  constexpr static auto get_last_error_time_indices() noexcept requires(has_last_error_time());
  constexpr static auto get_last_error_inode_indices() noexcept requires(has_last_error_inode());
  constexpr static auto get_lpf_ino_indices() noexcept requires(has_lpf_ino());
+ constexpr static auto get_encoding_indices() noexcept requires(has_encoding());
+ constexpr static auto get_encoding_params_indices() noexcept requires(has_encoding_params());
  std :: shared_ptr<content<get_block_size(), Config> > block;
 };
 
@@ -560,6 +567,18 @@ constexpr inline bool superblock <System, Config> :: has_lpf_ino() noexcept
   case ext4:
   return true;
  }
+}
+
+template <system_config System, global_config Config>
+constexpr inline bool superblock <System, Config> :: has_encoding() noexcept
+{
+ return system_query <System> :: is_having_case_fold();
+}
+
+template <system_config System, global_config Config>
+constexpr inline bool superblock <System, Config> :: has_encoding_params() noexcept
+{
+ return system_query <System> :: is_having_case_fold();
 }
 
 template <system_config System, global_config Config> template <class Self>
@@ -1039,6 +1058,48 @@ requires(superblock <System, Config> :: has_lpf_ino())
 }
 
 template <system_config System, global_config Config> template <class Self>
+inline auto superblock <System, Config> :: get_encoding(this Self&& self) noexcept
+requires(superblock <System, Config> :: has_encoding())
+{
+ if (const auto enc = std :: forward<Self>(self).read(get_encoding_indices()); !enc)
+ {
+  logger<Config, log_level :: error>().log("Failed to read encoding.");
+  return static_cast<std :: optional<system_config :: encoding_t> >(std :: nullopt);
+ }
+ else switch (*enc)
+ {
+  using enum system_config :: encoding_t;
+  case UINT32_C(0):
+  return std :: make_optional<system_config :: encoding_t>(ascii);
+  case UINT32_C(1):
+  return std :: make_optional<system_config :: encoding_t>(utf8_12_1);
+  default:
+  {
+   logger<Config, log_level :: error>().log("Unknown encoding: ", std :: hex, *enc);
+   return static_cast<std :: optional<system_config :: encoding_t> >(std :: nullopt);
+  }
+ }
+}
+
+template <system_config System, global_config Config> template <class Self>
+inline auto superblock <System, Config> :: get_encoding_params(this Self&& self) noexcept
+requires(superblock <System, Config> :: has_encoding_params())
+{
+ if (const auto enc = std :: forward<Self>(self).read(get_encoding_params_indices()); !enc)
+ {
+  logger<Config, log_level :: error>().log("Failed to read encoding.");
+  return static_cast<std :: optional<system_config :: encoding_params_t> >(std :: nullopt);
+ }
+ else if (*enc != (*enc & system_query <System> :: get_encoding_params_mask()))
+ {
+  const auto unsupported_params = *enc & ~system_query <System> :: get_encoding_params_mask();
+  logger<Config, log_level :: error>().log("Unsupported params read: 0x", std :: hex, unsupported_params, '.');
+  return static_cast<std :: optional<system_config :: encoding_params_t> >(std :: nullopt);
+ }
+ else return std :: make_optional(static_cast<system_config :: encoding_params_t>(*enc));
+}
+
+template <system_config System, global_config Config> template <class Self>
 inline auto superblock <System, Config> :: get_is_64bit(this Self&& self) noexcept
 requires(superblock <System, Config> :: has_feature_incompat())
 {
@@ -1051,6 +1112,24 @@ requires(superblock <System, Config> :: has_feature_incompat())
  {
   using enum system_config :: file_system_t;
   constexpr const static auto flag = std :: to_underlying(system_config :: feature_incompat_flags <ext4> :: bits64);
+  const auto res = static_cast<system_config :: feature_incompat_t>(std :: to_underlying(*flags) & (~flag));
+  return std :: make_optional(res != system_config :: feature_incompat_t :: empty);
+ }
+}
+
+template <system_config System, global_config Config> template <class Self>
+inline auto superblock <System, Config> :: get_case_fold(this Self&& self) noexcept
+requires(superblock <System, Config> :: has_feature_incompat())
+{
+ if (const auto flags = std :: forward<Self>(self).get_feature_incompat(); !flags)
+ {
+  logger<Config, log_level :: error>().log("Failed to get feature incompat flags.");
+  return static_cast<std :: optional<bool> >(std :: nullopt);
+ }
+ else
+ {
+  using enum system_config :: file_system_t;
+  constexpr const static auto flag = std :: to_underlying(system_config :: feature_incompat_flags <ext4> :: case_fold);
   const auto res = static_cast<system_config :: feature_incompat_t>(std :: to_underlying(*flags) & (~flag));
   return std :: make_optional(res != system_config :: feature_incompat_t :: empty);
  }
@@ -1325,4 +1404,18 @@ constexpr inline auto superblock <System, Config> :: get_lpf_ino_indices() noexc
 requires(superblock <System, Config> :: has_lpf_ino())
 {
  return std :: index_sequence<0x26Bzu, 0x26Azu, 0x269zu, 0x268zu>();
+}
+
+template <system_config System, global_config Config>
+constexpr inline auto superblock <System, Config> :: get_encoding_indices() noexcept
+requires(superblock <System, Config> :: has_encoding())
+{
+ return std :: index_sequence<0x27Dzu, 0x27Czu>();
+}
+
+template <system_config System, global_config Config>
+constexpr inline auto superblock <System, Config> :: get_encoding_params_indices() noexcept
+requires(superblock <System, Config> :: has_encoding_params())
+{
+ return std :: index_sequence<0x27Fzu, 0x27Ezu>();
 }
