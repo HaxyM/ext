@@ -40,11 +40,11 @@ inline std :: shared_ptr<content<N, Config> > content <N, Config> :: create() no
  }
  catch (const std :: exception& e)
  {
-  logger<Config, log_level :: error> l; l.log("Creation failed ", e.what(), '.');
+  logger<Config, log_level :: error>().log("Creation failed ", e.what(), '.');
  }
  catch (...)
  {
-  logger<Config, log_level :: error> l; l.log("Creation failed with exception.");
+  logger<Config, log_level :: error>().log("Creation failed with exception.");
  }
  return nullptr;
 }
@@ -61,11 +61,11 @@ inline std :: shared_ptr<content<N, Config> > content <N, Config> :: create(Stre
  }
  catch (const std :: exception& e)
  {
-  logger<Config, log_level :: error> l; l.log("Creation failed ", e.what(), '.');
+  logger<Config, log_level :: error>().log("Creation failed ", e.what(), '.');
  }
  catch (...)
  {
-  logger<Config, log_level :: error> l; l.log("Creation failed with exception.");
+  logger<Config, log_level :: error>().log("Creation failed with exception.");
  }
  return nullptr;
 }
@@ -80,11 +80,11 @@ inline std :: shared_ptr<content<N, Config> > content <N, Config> :: share(this 
  }
  catch (const std :: exception& e)
  {
-  logger<Config, log_level :: error> l; l.log("Sharing failed ", e.what(), '.');
+  logger<Config, log_level :: error>().log("Sharing failed ", e.what(), '.');
  }
  catch (...)
  {
-  logger<Config, log_level :: error> l; l.log("Sharing failed with exception.");
+  logger<Config, log_level :: error>().log("Sharing failed with exception.");
  }
  return nullptr;
 }
